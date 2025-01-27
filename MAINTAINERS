@@ -28184,6 +28184,14 @@ S:	Maintained
 F:	Documentation/devicetree/bindings/display/xlnx/xlnx,bridge-v-tc.yaml
 F:	drivers/gpu/drm/xlnx/xlnx_vtc.c
 
+XILINX XADC DRIVER
+M:	Salih Erim <salih.erim@amd.com>
+R:	Conall O'Griofa <conall.ogriofa@amd.com>
+L:	linux-iio@vger.kernel.org
+S:	Maintained
+F:	Documentation/devicetree/bindings/iio/adc/xilinx-xadc.txt
+F:	drivers/iio/adc/xilinx-xadc*
+
 RENESAS PTP AND RSMU DRIVERS
 M:	Suraj Gupta <suraj.gupta2@amd.com>
 S:	Maintained
