@@ -781,7 +781,7 @@ struct aie_rsc_user_stat_array {
  */
 #define AIE_UPDATE_SHIMDMA_DMABUF_BD_ADDR_IOCTL	_IOW(AIE_IOCTL_BASE, 0x1e, \
 						struct aie_dmabuf_bd_args)
-#if IS_ENABLED(CONFIG_XILINX_AIE)
+#if 0
 
 int aie_partition_write_privileged_mem(struct device *dev, size_t offset, size_t len, void *data);
 int aie_partition_read_privileged_mem(struct device *dev, size_t offset, size_t len, void *data);
