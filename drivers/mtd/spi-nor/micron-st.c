@@ -193,21 +193,51 @@ static int mt35xu512aba_post_sfdp_fixup(struct spi_nor *nor)
 static int mt35xu01gcba_late_init(struct spi_nor *nor)
 {
 	struct spi_nor_flash_parameter *params = spi_nor_get_params(nor, 0);
+	int err, idx;
 
 	params->n_dice = 2;
 	params->die_erase_opcode = SPINOR_OP_MT_DIE_ERASE;
 
-	return spi_nor_set_4byte_addr_mode(nor, true);
+	for (idx = 0; idx < nor->num_flash; idx++) {
+		/*
+		 * Select the appropriate CS index before
+		 * issuing the command.
+		 */
+		nor->spimem->spi->cs_index_mask = 1 << idx;
+		err = spi_nor_set_4byte_addr_mode(nor, true);
+		if (err) {
+			nor->spimem->spi->cs_index_mask = 1;
+			return err;
+		}
+	}
+	nor->spimem->spi->cs_index_mask = 1;
+
+	return err;
 }
 
 static int mt35xu02gcba_late_init(struct spi_nor *nor)
 {
 	struct spi_nor_flash_parameter *params = spi_nor_get_params(nor, 0);
+	int err, idx;
 
 	params->n_dice = 4;
 	params->die_erase_opcode = SPINOR_OP_MT_DIE_ERASE;
 
-	return spi_nor_set_4byte_addr_mode(nor, true);
+	for (idx = 0; idx < nor->num_flash; idx++) {
+		/*
+		 * Select the appropriate CS index before
+		 * issuing the command.
+		 */
+		nor->spimem->spi->cs_index_mask = 1 << idx;
+		err = spi_nor_set_4byte_addr_mode(nor, true);
+		if (err) {
+			nor->spimem->spi->cs_index_mask = 1;
+			return err;
+		}
+	}
+	nor->spimem->spi->cs_index_mask = 1;
+
+	return err;
 }
 
 static const struct spi_nor_fixups mt35xu512aba_fixups = {

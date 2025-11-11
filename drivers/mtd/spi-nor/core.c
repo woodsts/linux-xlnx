@@ -3973,16 +3973,38 @@ static void spi_nor_resume(struct mtd_info *mtd)
 	struct spi_nor *nor = mtd_to_spi_nor(mtd);
 	struct spi_nor_flash_parameter *params = spi_nor_get_params(nor, 0);
 	struct device *dev = nor->dev;
-	int ret;
+	int ret, idx;
 
 	ret = spi_nor_hw_reset(nor);
 	if (ret)
 		dev_err(dev, "device reset failed during resume()\n");
 
 	if (params->addr_mode_nbytes == 4) {
-		ret = spi_nor_set_4byte_addr_mode(nor, true);
-		if (ret)
-			dev_err(nor->dev, "Failed to enter 4-byte address mode, err = %d\n", ret);
+		if (nor->flags & SNOR_F_HAS_PARALLEL) {
+			/*
+			 * In parallel mode both chip selects i.e., CS0 &
+			 * CS1 need to be asserted simulatneously.
+			 */
+			nor->spimem->spi->cs_index_mask = SPI_NOR_ENABLE_MULTI_CS;
+			ret = spi_nor_set_4byte_addr_mode(nor, true);
+			if (ret)
+				dev_err(nor->dev,
+					"Failed to enter 4-byte address mode, err = %d\n", ret);
+		} else {
+			for (idx = 0; idx < nor->num_flash; idx++) {
+				/*
+				 * Select the appropriate CS index before
+				 * issuing the command.
+				 */
+				nor->spimem->spi->cs_index_mask = 1 << idx;
+				ret = spi_nor_set_4byte_addr_mode(nor, true);
+				if (ret)
+					dev_err(nor->dev,
+						"Failed to enter 4-byte address mode, err = %d\n",
+						ret);
+			}
+			nor->spimem->spi->cs_index_mask = 1;
+		}
 	}
 
 	/* re-initialize the nor chip */
