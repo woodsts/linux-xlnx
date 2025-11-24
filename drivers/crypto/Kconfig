@@ -726,16 +726,6 @@ config CRYPTO_DEV_XILINX_ECDSA
 	  ECDSA hardware accelerator. Select this if you want to use the Versal
 	  module for ECDSA algorithms.
 
-config CRYPTO_DEV_XILINX_RSA
-	tristate "Support for Xilinx ZynqMP RSA hw accelerator (DEPRECATED)"
-	depends on (ARCH_ZYNQMP || COMPILE_TEST) && (CRYPTO_DEV_XILINX_RSA_AKCIPHER=n)
-	select CRYPTO_AES
-	select CRYPTO_BLKCIPHER
-	help
-	  Xilinx processors have RSA hw accelerator used for signature
-	  generation and verification. This driver is deprecated.
-	  Please migrate to : CRYPTO_DEV_XILINX_RSA_AKCIPHER
-
 config CRYPTO_DEV_XILINX_TRNG
 	tristate "Support for Xilinx True Random Generator"
 	depends on ZYNQMP_FIRMWARE || COMPILE_TEST
