@@ -54,9 +54,6 @@ int zynqmp_pm_sha_hash(const u64 address, const u32 size, const u32 flags);
 int versal_pm_puf_registration(const u64 in_addr);
 int versal_pm_puf_regeneration(const u64 in_addr);
 int versal_pm_puf_clear_id(void);
-int zynqmp_pm_efuse_access(const u64 address, u32 *out);
-int versal_pm_efuse_read(const u64 address, u32 offset, u32 size);
-int versal_pm_efuse_write(const u64 address, const u32 operationid, const u8 envdis);
 int versal_pm_sha_hash(const u64 src, const u64 dst, const u32 size);
 int versal_pm_rsa_encrypt(const u64 in_params, const u64 in_addr);
 int versal_pm_rsa_decrypt(const u64 in_params, const u64 in_addr);
@@ -101,21 +98,6 @@ static inline int versal_pm_puf_regeneration(const u64 in_addr)
 }
 
 static inline int versal_pm_puf_clear_id(void)
-{
-	return -ENODEV;
-}
-
-static inline int versal_pm_efuse_read(const u64 address, u32 offset, u32 size)
-{
-	return -ENODEV;
-}
-
-static inline int versal_pm_efuse_write(const u64 address, const u32 operationid, const u8 envdis)
-{
-	return -ENODEV;
-}
-
-static inline int zynqmp_pm_efuse_access(const u64 address, u32 *out)
 {
 	return -ENODEV;
 }

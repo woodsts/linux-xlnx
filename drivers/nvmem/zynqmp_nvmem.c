@@ -10,6 +10,7 @@
 #include <linux/of.h>
 #include <linux/platform_device.h>
 #include <linux/firmware/xlnx-zynqmp.h>
+#include <linux/firmware/xlnx-zynqmp-nvm.h>
 
 #define SILICON_REVISION_MASK 0xF
 #define P_USER_0_64_UPPER_MASK	GENMASK(31, 16)
