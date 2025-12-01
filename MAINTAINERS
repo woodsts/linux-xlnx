@@ -28238,9 +28238,8 @@ S:	Maintained
 F:	drivers/crypto/xilinx/zynqmp-sha.c
 
 XILINX ZYNQMP NVMEM DRIVER
-M:	Praveen Teja Kundanala <praveen.teja.kundanala@amd.com>
+M:	Harsh Jain <h.jain@amd.com>
 M:	Kalyani Akula <kalyani.akula@amd.com>
-R:	Michal Simek <michal.simek@amd.com>
 S:	Maintained
 F:	Documentation/devicetree/bindings/nvmem/xlnx,zynqmp-nvmem.yaml
 F:	drivers/nvmem/zynqmp_nvmem.c
