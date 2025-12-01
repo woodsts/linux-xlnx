@@ -45,10 +45,16 @@
 #define MMI_DC_AV_BUF_FMT_CR_Y0_CB_Y1			(1)
 #define MMI_DC_AV_BUF_FMT_Y0_CB_Y1_CR			(3)
 #define MMI_DC_AV_BUF_FMT_YV24				(5)
-
 #define MMI_DC_AV_BUF_FMT_RGB888			(10)
 #define MMI_DC_AV_BUF_FMT_YV16CI_420			(20)
 #define MMI_DC_AV_BUF_FMT_RGBA8888			(32)
+#define MMI_DC_AV_BUF_FMT_YV24DCL_10BPC			(90)
+#define MMI_DC_AV_BUF_FMT_YV24DCL_12BPC			(92)
+#define MMI_DC_AV_BUF_FMT_YV16CIDCM_10BPC		(95)
+#define MMI_DC_AV_BUF_FMT_YV16CIDCM_12BPC		(97)
+#define MMI_DC_AV_BUF_FMT_YV16CIDCM_420_10BPC		(107)
+#define MMI_DC_AV_BUF_FMT_YV16CIDCM_420_12BPC		(111)
+
 
 #define MMI_DC_AV_BUF_FMT_SHIFT(layer)			(8 * (layer))
 #define MMI_DC_AV_BUF_FMT_MASK(layer)			(0xff << \
@@ -156,6 +162,49 @@ static const struct mmi_dc_format video_plane_formats[] = {
 		.csc_matrix		= csc_sdtv_to_rgb_matrix,
 		.csc_offsets		= csc_sdtv_to_rgb_offsets,
 		.csc_scaling_factors	= csc_scaling_factors_888,
+	},
+	{
+		.drm_format		= DRM_FORMAT_S410,
+		.buf_format		= MMI_DC_AV_BUF_FMT_YV24DCL_10BPC,
+		.format_flags		= MMI_DC_FMT_YUV,
+		.csc_matrix		= csc_sdtv_to_rgb_matrix,
+		.csc_offsets		= csc_sdtv_to_rgb_offsets,
+		.csc_scaling_factors	= csc_scaling_factors_101010,
+	},
+	{
+		.drm_format		= DRM_FORMAT_S412,
+		.buf_format		= MMI_DC_AV_BUF_FMT_YV24DCL_12BPC,
+		.format_flags		= MMI_DC_FMT_YUV,
+		.csc_matrix		= csc_sdtv_to_rgb_matrix,
+		.csc_offsets		= csc_sdtv_to_rgb_offsets,
+		.csc_scaling_factors	= csc_scaling_factors_121212,
+	},
+	{
+		.drm_format		= DRM_FORMAT_P210,
+		.buf_format		= MMI_DC_AV_BUF_FMT_YV16CIDCM_10BPC,
+		.format_flags		= MMI_DC_FMT_YUV |
+					  MMI_DC_FMT_HSUB,
+		.csc_matrix		= csc_sdtv_to_rgb_matrix,
+		.csc_offsets		= csc_sdtv_to_rgb_offsets,
+		.csc_scaling_factors	= csc_scaling_factors_101010,
+	},
+	{
+		.drm_format		= DRM_FORMAT_P010,
+		.buf_format		= MMI_DC_AV_BUF_FMT_YV16CIDCM_420_10BPC,
+		.format_flags		= MMI_DC_FMT_YUV |
+					  MMI_DC_FMT_HSUB,
+		.csc_matrix		= csc_sdtv_to_rgb_matrix,
+		.csc_offsets		= csc_sdtv_to_rgb_offsets,
+		.csc_scaling_factors	= csc_scaling_factors_101010,
+	},
+	{
+		.drm_format		= DRM_FORMAT_P012,
+		.buf_format		= MMI_DC_AV_BUF_FMT_YV16CIDCM_420_12BPC,
+		.format_flags		= MMI_DC_FMT_YUV |
+					  MMI_DC_FMT_HSUB,
+		.csc_matrix		= csc_sdtv_to_rgb_matrix,
+		.csc_offsets		= csc_sdtv_to_rgb_offsets,
+		.csc_scaling_factors	= csc_scaling_factors_121212,
 	},
 };
 

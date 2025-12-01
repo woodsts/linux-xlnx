@@ -53,6 +53,7 @@
 #define MMI_DC_AV_BUF_AUD_VID_TIMING_SRC_INT	BIT(2)
 
 #define MMI_DC_AV_BUF_8BIT_SF			(0x00010101)
+#define MMI_DC_AV_BUF_10BIT_SF			(0x00010040)
 #define MMI_DC_AV_BUF_12BIT_SF			(0x00010000)
 
 /* Misc Registers */
@@ -130,6 +131,12 @@ const u32 csc_scaling_factors_888[] = {
 	MMI_DC_AV_BUF_8BIT_SF,
 	MMI_DC_AV_BUF_8BIT_SF,
 	MMI_DC_AV_BUF_8BIT_SF,
+};
+
+const u32 csc_scaling_factors_101010[] = {
+	MMI_DC_AV_BUF_10BIT_SF,
+	MMI_DC_AV_BUF_10BIT_SF,
+	MMI_DC_AV_BUF_10BIT_SF,
 };
 
 const u32 csc_scaling_factors_121212[] = {
