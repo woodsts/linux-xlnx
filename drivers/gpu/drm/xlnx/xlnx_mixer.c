@@ -2411,7 +2411,7 @@ enum xlnx_mix_video_fmt {
 	VIDEO_FMT_RGB,
 	VIDEO_FMT_YUV444,
 	VIDEO_FMT_YUV422,
-	VIDEO_FMT_YONLY,
+	VIDEO_FMT_YUV420,
 };
 
 static int xlnx_mix_video_to_media_bus_format(u32 xv_fmt, u32 *mb_fmt)
@@ -2421,6 +2421,7 @@ static int xlnx_mix_video_to_media_bus_format(u32 xv_fmt, u32 *mb_fmt)
 		[VIDEO_FMT_RGB]		= MEDIA_BUS_FMT_RGB888_1X24,
 		[VIDEO_FMT_YUV444]	= MEDIA_BUS_FMT_VUY8_1X24,
 		[VIDEO_FMT_YUV422]	= MEDIA_BUS_FMT_UYVY8_1X16,
+		[VIDEO_FMT_YUV420]	= MEDIA_BUS_FMT_VYYUYY8_1X24,
 	};
 
 	if (xv_fmt >= ARRAY_SIZE(video_fmt_map))
