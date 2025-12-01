@@ -54,7 +54,8 @@
 #define MMI_DC_AV_BUF_FMT_YV16CIDCM_12BPC		(97)
 #define MMI_DC_AV_BUF_FMT_YV16CIDCM_420_10BPC		(107)
 #define MMI_DC_AV_BUF_FMT_YV16CIDCM_420_12BPC		(111)
-
+#define MMI_DC_AV_BUF_FMT_YDCL_ONLY_10BPC		(119)
+#define MMI_DC_AV_BUF_FMT_YDCL_ONLY_12BPC		(121)
 
 #define MMI_DC_AV_BUF_FMT_SHIFT(layer)			(8 * (layer))
 #define MMI_DC_AV_BUF_FMT_MASK(layer)			(0xff << \
@@ -202,6 +203,38 @@ static const struct mmi_dc_format video_plane_formats[] = {
 		.buf_format		= MMI_DC_AV_BUF_FMT_YV16CIDCM_420_12BPC,
 		.format_flags		= MMI_DC_FMT_YUV |
 					  MMI_DC_FMT_HSUB,
+		.csc_matrix		= csc_sdtv_to_rgb_matrix,
+		.csc_offsets		= csc_sdtv_to_rgb_offsets,
+		.csc_scaling_factors	= csc_scaling_factors_121212,
+	},
+	{
+/*
+ * TODO: Keep only Y10 or R10 when Yxx formats are accepted or rejected into the
+ * upstream kernel.
+ */
+#ifdef DRM_FORMAT_Y10
+		.drm_format		= DRM_FORMAT_Y10,
+#else
+		.drm_format		= DRM_FORMAT_R10,
+#endif
+		.buf_format		= MMI_DC_AV_BUF_FMT_YDCL_ONLY_10BPC,
+		.format_flags		= MMI_DC_FMT_YUV,
+		.csc_matrix		= csc_sdtv_to_rgb_matrix,
+		.csc_offsets		= csc_sdtv_to_rgb_offsets,
+		.csc_scaling_factors	= csc_scaling_factors_101010,
+	},
+	{
+/*
+ * TODO: Keep only Y12 or R12 as soon as Yxx formats are accepted or rejected
+ * into the upstream kernel.
+ */
+#ifdef DRM_FORMAT_Y12
+		.drm_format		= DRM_FORMAT_Y12,
+#else
+		.drm_format		= DRM_FORMAT_R12,
+#endif
+		.buf_format		= MMI_DC_AV_BUF_FMT_YDCL_ONLY_12BPC,
+		.format_flags		= MMI_DC_FMT_YUV,
 		.csc_matrix		= csc_sdtv_to_rgb_matrix,
 		.csc_offsets		= csc_sdtv_to_rgb_offsets,
 		.csc_scaling_factors	= csc_scaling_factors_121212,
