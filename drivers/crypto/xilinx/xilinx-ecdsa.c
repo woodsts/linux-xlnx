@@ -18,8 +18,8 @@
 #include <linux/platform_device.h>
 #include "xilinx_ecdsasig.asn1.h"
 
-/* PLM supports 32-bit addresses only */
-#define VERSAL_DMA_BIT_MASK			32U
+/* PLM supports 64-bit addresses */
+#define VERSAL_DMA_BIT_MASK			64U
 
 /* PLM can process HASH and signature in multiples of 8 bytes */
 #define ECDSA_P521_CURVE_ALIGN_BYTES		2U
