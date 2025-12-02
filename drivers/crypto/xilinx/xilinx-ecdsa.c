@@ -5,7 +5,6 @@
  */
 
 #include <crypto/ecdh.h>
-#include <crypto/engine.h>
 #include <crypto/internal/akcipher.h>
 #include <crypto/internal/ecc.h>
 #include <crypto/ecdsa.h>
@@ -54,14 +53,8 @@ enum xilinx_crv_class {
 };
 
 struct xilinx_ecdsa_drv_ctx {
-	struct crypto_engine *engine;
-	struct akcipher_engine_alg alg;
+	struct akcipher_alg alg;
 	struct device *dev;
-};
-
-enum xilinx_akcipher_op {
-	XILINX_ECDSA_DECRYPT = 0,
-	XILINX_ECDSA_ENCRYPT
 };
 
 struct xilinx_ecdsa_tfm_ctx {
@@ -72,10 +65,6 @@ struct xilinx_ecdsa_tfm_ctx {
 	struct device *dev;
 	size_t key_size;
 	char *pub_kbuf;
-};
-
-struct xilinx_ecdsa_req_ctx {
-	enum xilinx_akcipher_op op;
 };
 
 static int xilinx_ecdsa_sign(struct akcipher_request *req)
@@ -268,7 +257,7 @@ static int xilinx_ecdsa_init_tfm(struct crypto_akcipher *tfm)
 	struct xilinx_ecdsa_drv_ctx *drv_ctx;
 	int ret;
 
-	drv_ctx = container_of(cipher_alg, struct xilinx_ecdsa_drv_ctx, alg.base);
+	drv_ctx = container_of(cipher_alg, struct xilinx_ecdsa_drv_ctx, alg);
 	tfm_ctx->dev = drv_ctx->dev;
 
 	tfm_ctx->pub_kbuf = kmalloc(ECDSA_MAX_KEY_SIZE, GFP_KERNEL);
@@ -280,22 +269,19 @@ static int xilinx_ecdsa_init_tfm(struct crypto_akcipher *tfm)
 		ret = -ENOMEM;
 		goto free;
 	}
-
-	tfm_ctx->fbk_cipher = crypto_alloc_akcipher(drv_ctx->alg.base.base.cra_name,
+	tfm_ctx->fbk_cipher = crypto_alloc_akcipher(drv_ctx->alg.base.cra_name,
 						    0,
-						    CRYPTO_ALG_NEED_FALLBACK);
+							CRYPTO_ALG_NEED_FALLBACK);
+
 	if (IS_ERR(tfm_ctx->fbk_cipher)) {
 		pr_err("%s() Error: failed to allocate fallback for %s\n",
-		       __func__, drv_ctx->alg.base.base.cra_name);
+		       __func__, drv_ctx->alg.base.cra_name);
+
 		ret = PTR_ERR(tfm_ctx->fbk_cipher);
 		goto unmap;
 	}
 
-	akcipher_set_reqsize(tfm, max(sizeof(struct xilinx_ecdsa_req_ctx),
-				      sizeof(struct akcipher_request) +
-				      crypto_akcipher_reqsize(tfm_ctx->fbk_cipher)));
-
-	if (strcmp(drv_ctx->alg.base.base.cra_name, "ecdsa-nist-p384") == 0)
+	if (strcmp(drv_ctx->alg.base.cra_name, "ecdsa-nist-p384") == 0)
 		ret = xilinx_ecdsa_ctx_init(tfm_ctx, ECC_CURVE_NIST_P384);
 	else
 		ret = xilinx_ecdsa_ctx_init(tfm_ctx, ECC_CURVE_NIST_P521);
@@ -309,38 +295,9 @@ free:
 	return ret;
 }
 
-static int handle_ecdsa_req(struct crypto_engine *engine, void *req)
-{
-	struct akcipher_request *areq = container_of(req,
-						     struct akcipher_request,
-						     base);
-	struct crypto_akcipher *akcipher = crypto_akcipher_reqtfm(req);
-	const struct xilinx_ecdsa_tfm_ctx *tfm_ctx = akcipher_tfm_ctx(akcipher);
-	const struct xilinx_ecdsa_req_ctx *rq_ctx = akcipher_request_ctx(areq);
-	struct akcipher_request *subreq = akcipher_request_ctx(req);
-	int err;
-
-	akcipher_request_set_tfm(subreq, tfm_ctx->fbk_cipher);
-
-	akcipher_request_set_callback(subreq, areq->base.flags, NULL, NULL);
-	akcipher_request_set_crypt(subreq, areq->src, areq->dst,
-				   areq->src_len, areq->dst_len);
-
-	if (rq_ctx->op == XILINX_ECDSA_ENCRYPT)
-		err = crypto_akcipher_encrypt(subreq);
-	else if (rq_ctx->op == XILINX_ECDSA_DECRYPT)
-		err = crypto_akcipher_decrypt(subreq);
-	else
-		err = -EOPNOTSUPP;
-
-	crypto_finalize_akcipher_request(engine, areq, err);
-
-	return 0;
-}
-
 static struct xilinx_ecdsa_drv_ctx versal_ecdsa_drv_ctx[] = {
 	{
-	.alg.base = {
+	.alg = {
 		.verify = xilinx_ecdsa_verify,
 		.set_pub_key = xilinx_ecdsa_set_pub_key,
 		.max_size = xilinx_ecdsa_max_size,
@@ -359,12 +316,9 @@ static struct xilinx_ecdsa_drv_ctx versal_ecdsa_drv_ctx[] = {
 			.cra_ctxsize = sizeof(struct xilinx_ecdsa_tfm_ctx),
 		},
 	},
-	.alg.op = {
-		.do_one_request = handle_ecdsa_req,
-	}
 	},
 	{
-	.alg.base = {
+	.alg = {
 		.verify = xilinx_ecdsa_verify,
 		.set_pub_key = xilinx_ecdsa_set_pub_key,
 		.max_size = xilinx_ecdsa_max_size,
@@ -382,9 +336,6 @@ static struct xilinx_ecdsa_drv_ctx versal_ecdsa_drv_ctx[] = {
 			.cra_module = THIS_MODULE,
 			.cra_ctxsize = sizeof(struct xilinx_ecdsa_tfm_ctx),
 		},
-	},
-	.alg.op = {
-		.do_one_request = handle_ecdsa_req,
 	},
 	}
 };
@@ -418,38 +369,23 @@ static int xilinx_ecdsa_probe(struct platform_device *pdev)
 		return ret;
 	}
 
-	ecdsa_drv_ctx->engine = crypto_engine_alloc_init(dev, 1);
-	if (!ecdsa_drv_ctx->engine) {
-		dev_err(dev, "Cannot alloc ECDSA engine\n");
-		return -ENOMEM;
-	}
-
-	ret = crypto_engine_start(ecdsa_drv_ctx->engine);
-	if (ret) {
-		dev_err(dev, "Cannot start ECDSA engine\n");
-		return ret;
-	}
-
 	platform_set_drvdata(pdev, ecdsa_drv_ctx);
 
 	for (i = 0; i < ARRAY_SIZE(versal_ecdsa_drv_ctx); i++) {
 		ecdsa_drv_ctx[i].dev = dev;
-		ret = crypto_engine_register_akcipher(&ecdsa_drv_ctx[i].alg);
-
+		ret = crypto_register_akcipher(&ecdsa_drv_ctx[i].alg);
 		if (ret) {
 			dev_err(dev, "failed to register %s (%d)!\n",
-				ecdsa_drv_ctx[i].alg.base.base.cra_name, ret);
-			goto crypto_engine_cleanup;
+				ecdsa_drv_ctx[i].alg.base.cra_name, ret);
+					goto unregister_algs;
 		}
 	}
 
 	return 0;
 
-crypto_engine_cleanup:
+unregister_algs:
 	for (--i; i >= 0; --i)
-		crypto_engine_unregister_akcipher(&ecdsa_drv_ctx[i].alg);
-
-	crypto_engine_exit(ecdsa_drv_ctx->engine);
+		crypto_unregister_akcipher(&ecdsa_drv_ctx[i].alg);
 
 	return ret;
 }
@@ -459,9 +395,8 @@ static void xilinx_ecdsa_remove(struct platform_device *pdev)
 	struct xilinx_ecdsa_drv_ctx *ecdsa_drv_ctx;
 
 	ecdsa_drv_ctx = platform_get_drvdata(pdev);
-
 	for (int i = 0; i < ARRAY_SIZE(versal_ecdsa_drv_ctx); i++)
-		crypto_engine_unregister_akcipher(&ecdsa_drv_ctx[i].alg);
+		crypto_unregister_akcipher(&ecdsa_drv_ctx[i].alg);
 }
 
 static struct platform_driver xilinx_ecdsa_driver = {
