@@ -251,8 +251,7 @@ static unsigned int xilinx_ecdsa_max_size(struct crypto_akcipher *tfm)
 
 static int xilinx_ecdsa_init_tfm(struct crypto_akcipher *tfm)
 {
-	struct xilinx_ecdsa_tfm_ctx *tfm_ctx =
-		(struct xilinx_ecdsa_tfm_ctx *)akcipher_tfm_ctx(tfm);
+	struct xilinx_ecdsa_tfm_ctx *tfm_ctx = akcipher_tfm_ctx(tfm);
 	struct akcipher_alg *cipher_alg = crypto_akcipher_alg(tfm);
 	struct xilinx_ecdsa_drv_ctx *drv_ctx;
 	int ret;
