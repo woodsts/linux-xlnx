@@ -59,7 +59,6 @@ struct xilinx_ecdsa_drv_ctx {
 
 struct xilinx_ecdsa_tfm_ctx {
 	dma_addr_t priv_key_addr, pub_key_addr;
-	struct crypto_akcipher *fbk_cipher;
 	const struct ecc_curve *curve;
 	unsigned int curve_id;
 	struct device *dev;
@@ -231,11 +230,6 @@ static void xilinx_ecdsa_exit_tfm(struct crypto_akcipher *tfm)
 {
 	struct xilinx_ecdsa_tfm_ctx *ctx = akcipher_tfm_ctx(tfm);
 
-	if (ctx->fbk_cipher) {
-		crypto_free_akcipher(ctx->fbk_cipher);
-		ctx->fbk_cipher = NULL;
-	}
-
 	if (ctx->pub_kbuf)
 		dma_unmap_single(ctx->dev, ctx->pub_key_addr, ECDSA_MAX_KEY_SIZE, DMA_TO_DEVICE);
 
@@ -268,24 +262,15 @@ static int xilinx_ecdsa_init_tfm(struct crypto_akcipher *tfm)
 		ret = -ENOMEM;
 		goto free;
 	}
-	tfm_ctx->fbk_cipher = crypto_alloc_akcipher(drv_ctx->alg.base.cra_name,
-						    0,
-							CRYPTO_ALG_NEED_FALLBACK);
-
-	if (IS_ERR(tfm_ctx->fbk_cipher)) {
-		pr_err("%s() Error: failed to allocate fallback for %s\n",
-		       __func__, drv_ctx->alg.base.cra_name);
-
-		ret = PTR_ERR(tfm_ctx->fbk_cipher);
-		goto unmap;
-	}
 
 	if (strcmp(drv_ctx->alg.base.cra_name, "ecdsa-nist-p384") == 0)
 		ret = xilinx_ecdsa_ctx_init(tfm_ctx, ECC_CURVE_NIST_P384);
 	else
 		ret = xilinx_ecdsa_ctx_init(tfm_ctx, ECC_CURVE_NIST_P521);
-	if (!ret)
-		return ret;
+	if (ret)
+		goto unmap;
+
+	return ret;
 unmap:
 	dma_unmap_single(tfm_ctx->dev, tfm_ctx->pub_key_addr, ECDSA_MAX_KEY_SIZE, DMA_TO_DEVICE);
 free:
@@ -309,8 +294,7 @@ static struct xilinx_ecdsa_drv_ctx versal_ecdsa_drv_ctx[] = {
 			.cra_priority = 100,
 			.cra_flags = CRYPTO_ALG_TYPE_AKCIPHER |
 				     CRYPTO_ALG_KERN_DRIVER_ONLY |
-				     CRYPTO_ALG_ALLOCATES_MEMORY |
-				     CRYPTO_ALG_NEED_FALLBACK,
+				     CRYPTO_ALG_ALLOCATES_MEMORY,
 			.cra_module = THIS_MODULE,
 			.cra_ctxsize = sizeof(struct xilinx_ecdsa_tfm_ctx),
 		},
@@ -330,8 +314,7 @@ static struct xilinx_ecdsa_drv_ctx versal_ecdsa_drv_ctx[] = {
 			.cra_priority = 100,
 			.cra_flags = CRYPTO_ALG_TYPE_AKCIPHER |
 				     CRYPTO_ALG_KERN_DRIVER_ONLY |
-				     CRYPTO_ALG_ALLOCATES_MEMORY |
-				     CRYPTO_ALG_NEED_FALLBACK,
+				     CRYPTO_ALG_ALLOCATES_MEMORY,
 			.cra_module = THIS_MODULE,
 			.cra_ctxsize = sizeof(struct xilinx_ecdsa_tfm_ctx),
 		},
