@@ -253,6 +253,8 @@ static int tsn_ep_ioctl(struct net_device *dev, struct ifreq *rq, void __user *d
 		return axienet_tadma_program(dev, data);
 	case SIOC_TADMA_STR_FLUSH:
 		return axienet_tadma_flush_stream(dev, data);
+	case SIOC_TADMA_GET_STREAMS:
+		return axienet_tadma_get_streams(dev, data);
 #endif
 	default:
 		return -EOPNOTSUPP;

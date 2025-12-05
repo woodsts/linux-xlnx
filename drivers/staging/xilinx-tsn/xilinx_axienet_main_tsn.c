@@ -1166,6 +1166,10 @@ static int axienet_ioctl_siocdevprivate(struct net_device *dev,
 		if (!(lp->abl_reg & TSN_BRIDGEEP_EPONLY))
 			return -ENOENT;
 		return axienet_tadma_flush_stream(dev, data);
+	case SIOC_TADMA_GET_STREAMS:
+		if (!(lp->abl_reg & TSN_BRIDGEEP_EPONLY))
+			return -ENOENT;
+		return axienet_tadma_get_streams(dev, data);
 #endif
 #if IS_ENABLED(CONFIG_XILINX_TSN_QBR)
 	case SIOC_PREEMPTION_CFG:

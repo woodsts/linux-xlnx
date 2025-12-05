@@ -27,6 +27,7 @@
 
 /* max packets that can be sent in a time trigger */
 #define MAX_TRIG_COUNT 4
+#define MAX_STREAMS 128
 
 /* This driver assumes the num_streams configured in HW is always 2^n.
  * TADMA IP has three master AXI4-Stream Interfaces. The names of these three
@@ -828,7 +829,6 @@ int axienet_tadma_add_stream(struct net_device *ndev, void __user *useraddr)
 				stream.qno);
 			return -EINVAL;
 		}
-
 		qtype = lp->txqs[stream.qno].dmaq_idx;
 	}
 
@@ -876,4 +876,42 @@ int axienet_tadma_add_stream(struct net_device *ndev, void __user *useraddr)
 	hlist_add_head(&entry->hash_link, &cb->stream_hash[idx]);
 
 	return 0;
+}
+
+int axienet_tadma_get_streams(struct net_device *ndev, void __user *useraddr)
+{
+	struct axienet_local *lp = netdev_priv(ndev);
+	struct tadma_stream *user_streams;
+	struct tadma_stream_entry *entry;
+	struct tadma_cb *cb = lp->t_cb;
+	int stream_count = 0, hash;
+	struct hlist_head *bucket;
+	u16 vlan_tci;
+
+	user_streams = kmalloc_array(MAX_STREAMS, sizeof(*user_streams), GFP_KERNEL);
+	if (!user_streams)
+		return -ENOMEM;
+
+	for (hash = 0; hash < lp->num_entries; hash++) {
+		bucket = &cb->stream_hash[hash];
+		hlist_for_each_entry(entry, bucket, hash_link) {
+			if (stream_count >= MAX_STREAMS)
+				break;
+			memcpy(user_streams[stream_count].dmac, entry->macvlan, ETH_ALEN);
+			vlan_tci = (entry->macvlan[6] << 8) | entry->macvlan[7];
+			user_streams[stream_count].vid = vlan_tci & VLAN_VID_MASK;
+			user_streams[stream_count].trigger = entry->tticks;
+			user_streams[stream_count].count = entry->count;
+			user_streams[stream_count].qno = tadma_qt_to_txq_idx(lp, entry->qtype);
+			stream_count++;
+		}
+	}
+
+	if (copy_to_user(useraddr, user_streams, stream_count * sizeof(*user_streams))) {
+		kfree(user_streams);
+		return -EFAULT;
+	}
+
+	kfree(user_streams);
+	return stream_count;
 }
