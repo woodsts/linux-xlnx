@@ -616,30 +616,6 @@ static void mmi_dcdma_chan_handle_no_ostand(struct mmi_dcdma_chan *chan)
 	wake_up(wait_to_stop);
 }
 
-/**
- * mmi_dcdma_chan_handle_vsync - Handle VSYNC interrupt
- * @chan: DCDMA channel
- *
- * Handle vertical sync interrupt. Here we should check if we have a pending
- * DMA request and start it.
- */
-static void mmi_dcdma_chan_handle_vsync(struct mmi_dcdma_chan *chan)
-{
-	struct virt_dma_desc *pending;
-	unsigned long flags;
-
-	spin_lock_irqsave(&chan->vchan.lock, flags);
-	pending = vchan_next_desc(&chan->vchan);
-	if (pending) {
-		if (chan->active_desc) {
-			vchan_cookie_complete(&chan->active_desc->vdesc);
-			chan->active_desc = NULL;
-		}
-		mmi_dcdma_chan_start_transfer(chan);
-	}
-	spin_unlock_irqrestore(&chan->vchan.lock, flags);
-}
-
 /* DCDMA Channels */
 
 /**
@@ -828,14 +804,14 @@ static void mmi_dcdma_chan_start_transfer(struct mmi_dcdma_chan *chan)
 
 	lockdep_assert_held(&chan->vchan.lock);
 
-	if (chan->active_desc)
-		return;
-
 	vdesc = vchan_next_desc(&chan->vchan);
 	if (!vdesc)
 		return;
 
 	list_del(&vdesc->node);
+
+	if (chan->active_desc)
+		vchan_cookie_complete(&chan->active_desc->vdesc);
 
 	if (mmi_dcdma_chan_enabled(chan) && chan->video_group)
 		first_frame = false;
@@ -1311,10 +1287,6 @@ static irqreturn_t mmi_dcdma_irq_handler(int irq, void *data)
 
 		if (status & MMI_DCDMA_NO_OSTAND_TRAN(ch))
 			mmi_dcdma_chan_handle_no_ostand(chan);
-
-		if (misc_status & MMI_DCDMA_IRQ_VSYNC &&
-		    mmi_dcdma_chan_enabled(chan))
-			mmi_dcdma_chan_handle_vsync(chan);
 	}
 
 	return IRQ_HANDLED;
