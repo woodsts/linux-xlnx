@@ -1404,6 +1404,7 @@ static int mc_probe(struct platform_device *pdev)
 	priv->p_data = p_data;
 	if (!get_ecc_state(priv)) {
 		edac_printk(KERN_INFO, EDAC_MC, "ECC not enabled\n");
+		rc = -ENODEV;
 		goto free_edac_mc;
 	}
 

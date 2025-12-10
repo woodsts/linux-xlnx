@@ -473,7 +473,7 @@ static int amd_mdb_add_pcie_port(struct amd_mdb_pcie *pcie,
 	if (pcie->perst_gpio) {
 		mdelay(PCIE_T_PVPERL_MS);
 		gpiod_set_value_cansleep(pcie->perst_gpio, 0);
-		mdelay(PCIE_RESET_CONFIG_DEVICE_WAIT_MS);
+		mdelay(PCIE_RESET_CONFIG_WAIT_MS);
 	}
 
 	err = dw_pcie_host_init(pp);
