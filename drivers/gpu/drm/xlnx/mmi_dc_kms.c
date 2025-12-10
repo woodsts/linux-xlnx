@@ -719,6 +719,17 @@ static void mmi_dc_remove(struct platform_device *pdev)
 	mmi_dc_fini(dc);
 }
 
+/**
+ * mmi_dc_shutdown - MMI DC shutdown handler
+ * @pdev: the platform device
+ */
+static void mmi_dc_shutdown(struct platform_device *pdev)
+{
+	struct mmi_dc *dc = dev_get_drvdata(&pdev->dev);
+
+	drm_atomic_helper_shutdown(&dc->drm->drm);
+}
+
 static const struct of_device_id mmi_dc_of_match[] = {
 	{ .compatible = "amd,mmi-dc-1.0", },
 	{},
@@ -728,6 +739,7 @@ MODULE_DEVICE_TABLE(of, mmi_dc_of_match);
 static struct platform_driver mmi_dc_driver = {
 	.probe			= mmi_dc_probe,
 	.remove_new		= mmi_dc_remove,
+	.shutdown		= mmi_dc_shutdown,
 	.driver			= {
 		.name		= "mmi-dc",
 		.pm		= &mmi_dc_pm_ops,
