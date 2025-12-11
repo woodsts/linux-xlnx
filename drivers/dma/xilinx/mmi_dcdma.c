@@ -837,10 +837,8 @@ static void mmi_dcdma_chan_start_transfer(struct mmi_dcdma_chan *chan)
 
 	list_del(&vdesc->node);
 
-	if (!mmi_dcdma_chan_enabled(chan)) {
-		mmi_dcdma_chan_enable(chan);
+	if (!mmi_dcdma_chan_enabled(chan))
 		first_frame = true;
-	}
 
 	desc = to_dcdma_sw_desc(vdesc);
 	chan->active_desc = desc;
@@ -851,6 +849,12 @@ static void mmi_dcdma_chan_start_transfer(struct mmi_dcdma_chan *chan)
 		    lower_32_bits(desc->dma_addr));
 	dcdma_write(chan->reg, MMI_DCDMA_CH_DSCR_STRT_ADDRE,
 		    upper_32_bits(desc->dma_addr));
+
+	/* make sure we miss [vblank..descriptor fetch] window */
+	if (first_frame && chan->video_group)
+		usleep_range(50, 100);
+
+	mmi_dcdma_chan_enable(chan);
 
 	trigger = chan->video_group ? mmi_dcdma_chan_video_group_ready(chan)
 				    : BIT(chan->id);
