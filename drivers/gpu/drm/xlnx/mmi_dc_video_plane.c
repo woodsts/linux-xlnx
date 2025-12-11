@@ -551,24 +551,32 @@ static void mmi_dc_video_plane_release_dma(struct mmi_dc_video_plane *plane)
 /**
  * mmi_dc_video_plane_submit_dma - Submit DMA transfer
  * @plane: DC plane
- * @state: DRM plane state to update to
+ * @plane_state: DRM plane state to update to
+ * @crtc_state: DRM CRTC state to update to
  *
  * Prepare and submit DMA transfers.
  */
 static void mmi_dc_video_plane_submit_dma(struct mmi_dc_video_plane *plane,
-					  struct drm_plane_state *state)
+					  struct drm_plane_state *plane_state,
+					  struct drm_crtc_state *crtc_state)
 {
 	const struct drm_format_info *info = plane->format.drm;
 	unsigned int i;
 
 	for (i = 0; i < info->num_planes; ++i) {
-		size_t width = state->fb->width / (i ? info->hsub : 1);
-		size_t height = state->fb->height / (i ? info->vsub : 1);
-		size_t pitch = state->fb->pitches[i];
+		size_t width = plane_state->fb->width / (i ? info->hsub : 1);
+		/*
+		 * Take the frame height from the current display mode as the
+		 * framebuffer may be overallocated to meet the decoder's macro
+		 * block size requirements.
+		 */
+		size_t height = crtc_state->adjusted_mode.vdisplay /
+				(i ? info->vsub : 1);
+		size_t pitch = plane_state->fb->pitches[i];
 		size_t size = width * info->cpp[i];
 		struct mmi_dc_dma_chan *dma_chan = plane->dmas[i];
-		dma_addr_t src_addr =
-			drm_fb_dma_get_gem_addr(state->fb, state, i);
+		dma_addr_t src_addr = drm_fb_dma_get_gem_addr(plane_state->fb,
+							      plane_state, i);
 
 		mmi_dc_dma_start_transfer(dma_chan, src_addr, size, pitch,
 					  height, true);
@@ -683,7 +691,7 @@ static int mmi_dc_video_plane_check_fb_state(struct mmi_dc_plane *plane,
 
 	if (plane_state->fb &&
 	    (plane_state->fb->width != crtc_state->adjusted_mode.hdisplay ||
-	     plane_state->fb->height != crtc_state->adjusted_mode.vdisplay))
+	     plane_state->fb->height < crtc_state->adjusted_mode.vdisplay))
 		return -EINVAL;
 
 	return drm_atomic_helper_check_plane_state(plane_state, crtc_state,
@@ -718,9 +726,12 @@ static void mmi_dc_video_plane_update(struct mmi_dc_plane *plane,
 		drm_atomic_get_new_plane_state(state, drm_plane);
 	struct drm_plane_state *old_state =
 		drm_atomic_get_old_plane_state(state, drm_plane);
+	struct drm_crtc_state *crtc_state;
 
-	if (!new_state->fb)
+	if (!new_state->fb || !new_state->crtc)
 		return;
+
+	crtc_state = drm_atomic_get_new_crtc_state(state, new_state->crtc);
 
 	/* Actual FB format changed - we have to reset DC */
 	if (video_plane->format.hw &&
@@ -735,7 +746,8 @@ static void mmi_dc_video_plane_update(struct mmi_dc_plane *plane,
 		mmi_dc_video_plane_set_format(video_plane,
 					      new_state->fb->format);
 		mmi_dc_avbuf_dma_enable(video_plane);
-		mmi_dc_video_plane_submit_dma(video_plane, new_state);
+		mmi_dc_video_plane_submit_dma(video_plane, new_state,
+					      crtc_state);
 	}
 }
 
@@ -786,6 +798,9 @@ static void mmi_dc_overlay_plane_update(struct mmi_dc_plane *plane,
 	u32 src_h = drm_rect_height(&plane_state->src) >> 16;
 	u32 dst_x = plane_state->dst.x1;
 	u32 dst_y = plane_state->dst.y1;
+
+	if (!plane_state->fb)
+		return;
 
 	mmi_dc_set_global_alpha(plane->dc, plane_state->alpha >> 8, true);
 	mmi_dc_pb_plane_crop(video_plane, src_x, src_y, src_w, src_h);
