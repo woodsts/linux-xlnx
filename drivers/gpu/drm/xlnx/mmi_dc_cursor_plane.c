@@ -173,21 +173,37 @@ static void mmi_dc_cursor_free_shadow_buffer(struct mmi_dc_cursor *cursor)
 static void mmi_dc_cursor_shadow_copy(struct mmi_dc_cursor *cursor,
 				      struct drm_framebuffer *fb)
 {
+	struct scatterlist tmp_sgl, *sgl;
+	struct sg_table tmp_sgt;
 	struct mmi_dc *dc = cursor->base.dc;
-	static const unsigned int num_px = MMI_DC_CURSOR_WIDTH *
-					   MMI_DC_CURSOR_HEIGHT;
 	struct drm_gem_dma_object *gem = drm_fb_dma_get_gem_obj(fb, 0);
-	u32 *src = gem->vaddr;
+	struct sg_table *sgt = gem->sgt;
 	u16 *dst = cursor->shadow.vmap_addr;
-	unsigned int px;
+	int i;
+
+	if (!sgt) {
+		if (WARN_ON(!gem->vaddr))
+			return;
+
+		tmp_sgt.sgl = &tmp_sgl;
+		tmp_sgt.nents = 1;
+		sg_init_one(&tmp_sgl, gem->vaddr, gem->base.size);
+		sgt = &tmp_sgt;
+	}
 
 	dma_sync_single_for_cpu(dc->dev, cursor->shadow.dma_addr,
 				cursor->shadow.size, DMA_TO_DEVICE);
-	for (px = 0; px < num_px; ++px, ++src, ++dst) {
-		*dst = ((*src & GENMASK(7,   0)) >>  4) <<  0 |
-		       ((*src & GENMASK(15,  8)) >> 12) << 12 |
-		       ((*src & GENMASK(23, 16)) >> 20) <<  8 |
-		       ((*src & GENMASK(31, 24)) >> 28) <<  4;
+	for_each_sg(sgt->sgl, sgl, sgt->nents, i) {
+		u32 *src = sg_virt(sgl);
+		unsigned int px, num_px = sgl->length / sizeof(*src);
+
+		/* Converting DRM_FORMAT_ARGB8888 to DRM_FORMAT_ARGB4444 */
+		for (px = 0; px < num_px; ++px, ++src, ++dst) {
+			*dst = ((*src & GENMASK(7,   0)) >>  4) <<  0 |
+			       ((*src & GENMASK(15,  8)) >> 12) << 12 |
+			       ((*src & GENMASK(23, 16)) >> 20) <<  8 |
+			       ((*src & GENMASK(31, 24)) >> 28) <<  4;
+		}
 	}
 	dma_sync_single_for_device(dc->dev, cursor->shadow.dma_addr,
 				   cursor->shadow.size, DMA_TO_DEVICE);
