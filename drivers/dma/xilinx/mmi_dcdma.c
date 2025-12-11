@@ -821,7 +821,7 @@ static u32 mmi_dcdma_chan_video_group_ready(struct mmi_dcdma_chan *chan)
  */
 static void mmi_dcdma_chan_start_transfer(struct mmi_dcdma_chan *chan)
 {
-	bool first_frame = false;
+	bool first_frame = true;
 	struct virt_dma_desc *vdesc;
 	struct mmi_dcdma_sw_desc *desc;
 	u32 trigger;
@@ -837,8 +837,8 @@ static void mmi_dcdma_chan_start_transfer(struct mmi_dcdma_chan *chan)
 
 	list_del(&vdesc->node);
 
-	if (!mmi_dcdma_chan_enabled(chan))
-		first_frame = true;
+	if (mmi_dcdma_chan_enabled(chan) && chan->video_group)
+		first_frame = false;
 
 	desc = to_dcdma_sw_desc(vdesc);
 	chan->active_desc = desc;
