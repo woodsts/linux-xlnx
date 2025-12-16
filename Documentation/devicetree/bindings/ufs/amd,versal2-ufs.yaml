@@ -24,22 +24,20 @@ properties:
 
   clock-names:
     items:
-      - const: core_clk
+      - const: core
 
   power-domains:
     maxItems: 1
 
   resets:
-    minItems: 2
     maxItems: 2
 
   reset-names:
     items:
-      - const: ufshc-rst
-      - const: ufsphy-rst
+      - const: host
+      - const: phy
 
 required:
-  - compatible
   - reg
   - clocks
   - clock-names
@@ -54,10 +52,10 @@ examples:
     ufs@f10b0000 {
         compatible = "amd,versal2-ufs";
         reg = <0xf10b0000 0x1000>;
-        interrupts = <GIC_SPI 234 IRQ_TYPE_LEVEL_HIGH>;
         clocks = <&ufs_core_clk>;
-        clock-names = "core_clk";
-        freq-table-hz = <0 0>;
+        clock-names = "core";
         resets = <&scmi_reset 4>, <&scmi_reset 35>;
-        reset-names = "ufshc-rst", "ufsphy-rst";
+        reset-names = "host", "phy";
+        interrupts = <GIC_SPI 234 IRQ_TYPE_LEVEL_HIGH>;
+        freq-table-hz = <0 0>;
     };

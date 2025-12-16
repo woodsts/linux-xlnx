@@ -319,19 +319,19 @@ static int ufs_versal2_init(struct ufs_hba *hba)
 	host->phy_mode = UFSHCD_DWC_PHY_MODE_ROM;
 
 	list_for_each_entry(clki, &hba->clk_list_head, list) {
-		if (!strcmp(clki->name, "core_clk"))
+		if (!strcmp(clki->name, "core"))
 			host->host_clk = clk_get_rate(clki->clk);
 	}
 
-	host->rstc = devm_reset_control_get_exclusive(dev, "ufshc-rst");
+	host->rstc = devm_reset_control_get_exclusive(dev, "host");
 	if (IS_ERR(host->rstc)) {
-		dev_err(dev, "failed to get reset ctrl: ufshc-rst\n");
+		dev_err(dev, "failed to get reset ctrl: host\n");
 		return PTR_ERR(host->rstc);
 	}
 
-	host->rstphy = devm_reset_control_get_exclusive(dev, "ufsphy-rst");
+	host->rstphy = devm_reset_control_get_exclusive(dev, "phy");
 	if (IS_ERR(host->rstphy)) {
-		dev_err(dev, "failed to get reset ctrl: ufsphy-rst\n");
+		dev_err(dev, "failed to get reset ctrl: phy\n");
 		return PTR_ERR(host->rstphy);
 	}
 
