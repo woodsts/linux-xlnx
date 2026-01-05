@@ -263,8 +263,8 @@ struct aie_partition_req {
  */
 struct aie_op_handshake_data {
 	void *addr;
-	size_t size;
-	size_t offset;
+	__kernel_size_t size;
+	__kernel_size_t offset;
 	struct aie_location loc;
 };
 
