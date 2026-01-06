@@ -897,11 +897,6 @@ static inline u32 xlnx_hdmi_readl(struct xlnx_hdmi *hdmi, int offset)
 	return readl(hdmi->base + offset);
 }
 
-static void xlnx_hdmi_clr(struct xlnx_hdmi *hdmi, int offset, u32 clr)
-{
-	xlnx_hdmi_writel(hdmi, offset, xlnx_hdmi_readl(hdmi, offset) & ~clr);
-}
-
 static inline void
 xlnx_hdmi_vtc_writel(struct xlnx_hdmi *hdmi, u32 offset, u32 val)
 {
@@ -991,6 +986,7 @@ static void xlnx_hdmi_vtc_set_timing(struct xlnx_hdmi *hdmi,
 	u32 vtotal, vactive, vsync_start, vbackporch_start;
 	u32 hsync_len, hfront_porch, hback_porch;
 	u32 vsync_len, vfront_porch, vback_porch;
+	bool is_interlaced = !!(mode->flags & DRM_MODE_FLAG_INTERLACE);
 
 	/* vtc reset */
 	xlnx_hdmi_vtc_writel(hdmi, HDMI_TX_VTC_CTL, HDMI_TX_VTC_RST);
@@ -1039,6 +1035,9 @@ static void xlnx_hdmi_vtc_set_timing(struct xlnx_hdmi *hdmi,
 	reg |= (vactive & HDMI_TX_VTC_ACTIVE_SIZE_MASK) <<
 		HDMI_TX_VTC_FIELD1_VSIZE_SHIFT;
 	xlnx_hdmi_vtc_writel(hdmi, HDMI_TX_VTC_GASIZE_F0, reg);
+	/* Active size for field 1 (interlaced only) */
+	if (is_interlaced)
+		xlnx_hdmi_vtc_writel(hdmi, HDMI_TX_VTC_GASIZE_F1, reg);
 
 	reg = hsync_start & HDMI_TX_VTC_GHSYNC_START_MASK;
 	reg |= (hbackporch_start << HDMI_TX_VTC_GH1BPSTART_SHIFT) &
@@ -1049,14 +1048,27 @@ static void xlnx_hdmi_vtc_set_timing(struct xlnx_hdmi *hdmi,
 	reg |= ((vbackporch_start - 1) << HDMI_TX_VTC_FIELD1_VSIZE_SHIFT) &
 		HDMI_TX_VTC_F0_VSYNC_VEND_MASK;
 	xlnx_hdmi_vtc_writel(hdmi, HDMI_TX_VTC_GVSYNC, reg);
-	xlnx_hdmi_clr(hdmi, HDMI_TX_VTC_BASE + HDMI_TX_VTC_GFENC,
-		      HDMI_TX_VTC_GFENC_MASK);
+	/* VSync timing for field 1 (interlaced only) */
+	if (is_interlaced)
+		xlnx_hdmi_vtc_writel(hdmi, HDMI_TX_VTC_GVSYNC_F1, reg);
 
-	/* Calculate and uppdate Generator VBlank Hori field 0 */
+	/* Enable or disable field encoding based on interlaced mode */
+	if (is_interlaced)
+		xlnx_hdmi_vtc_writel(hdmi, HDMI_TX_VTC_GFENC,
+				     HDMI_TX_VTC_GFENC_MASK);
+	else
+		xlnx_hdmi_vtc_clr(hdmi, HDMI_TX_VTC_GFENC,
+				  HDMI_TX_VTC_GFENC_MASK);
+
+	/* Calculate and update Generator VBlank Hori field 0 */
 	reg = hactive & HDMI_TX_VTC_F0VBLANK_HSTART_MASK;
 	reg |= (hactive << HDMI_TX_VTC_F0VSYNC_HEND_SHIFT) &
 		HDMI_TX_VTC_F0VBLANK_HEND_MASK;
 	xlnx_hdmi_vtc_writel(hdmi, HDMI_TX_VTC_GVBHOFF, reg);
+
+	/* VBlank Hori field 1 (interlaced only) */
+	if (is_interlaced)
+		xlnx_hdmi_vtc_writel(hdmi, HDMI_TX_VTC_GVBHOFF_F1, reg);
 
 	/* Calculate and update Generator VSync Hori field 0 */
 	reg = hsync_start & HDMI_TX_VTC_F0VBLANK_HSTART_MASK;
@@ -1064,8 +1076,18 @@ static void xlnx_hdmi_vtc_set_timing(struct xlnx_hdmi *hdmi,
 		HDMI_TX_VTC_F0VBLANK_HEND_MASK;
 	xlnx_hdmi_vtc_writel(hdmi, HDMI_TX_VTC_GVSHOFF, reg);
 
-	/* sets all polarities as active high */
-	xlnx_hdmi_vtc_writel(hdmi, HDMI_TX_VTC_GPOL, HDMI_TX_VTC_GPOL_MASK);
+	/* VSync Hori field 1 (interlaced only) */
+	if (is_interlaced)
+		xlnx_hdmi_vtc_writel(hdmi, HDMI_TX_VTC_GVSHOFF_F1, reg);
+
+	/* Set polarities - for interlaced, include field ID polarity */
+	if (is_interlaced)
+		reg = HDMI_TX_VTC_GPOL_MASK | HDMI_TX_VTC_GPOL_FIELD_ID_POL;
+	else
+		reg = HDMI_TX_VTC_GPOL_MASK;
+
+	xlnx_hdmi_vtc_writel(hdmi, HDMI_TX_VTC_GPOL, reg);
+
 	/* configure timing source */
 	xlnx_hdmi_vtc_writel(hdmi, HDMI_TX_VTC_CTL, HDMI_TX_VTC_CTL_MASK |
 			     HDMI_TX_VTC_CTL_RU);
