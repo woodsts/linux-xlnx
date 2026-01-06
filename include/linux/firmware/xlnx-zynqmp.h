@@ -19,7 +19,7 @@
 #include <linux/firmware/xlnx-zynqmp-fpga.h>
 #include <linux/firmware/xlnx-zynqmp-nvm.h>
 #include <linux/firmware/xlnx-zynqmp-pdi.h>
-#include <linux/firmware/xlnx-zynqmp-secure.h>
+#include <linux/firmware/xlnx-zynqmp-crypto.h>
 #include <linux/firmware/xlnx-zynqmp-sem.h>
 
 #define ZYNQMP_PM_VERSION_MAJOR	1
