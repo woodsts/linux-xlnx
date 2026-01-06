@@ -2867,25 +2867,25 @@ xlnx_hdmi_connector_mode_valid(struct drm_connector *connector,
 {
 	struct xlnx_hdmi *hdmi = connector_to_hdmi(connector);
 	enum drm_mode_status status = MODE_OK;
+	int clock = mode->clock;
 
 	if (mode->flags & DRM_MODE_FLAG_INTERLACE) {
-		mode->vdisplay = mode->vdisplay / 2;
 		dev_dbg(hdmi->dev, "INTERLACE, mode->vdisplay %d\n",
 			mode->vdisplay);
 	}
 
 	if ((mode->flags & DRM_MODE_FLAG_DBLCLK) &&
 	    (mode->flags & DRM_MODE_FLAG_INTERLACE)) {
-		mode->clock *= 2;
+		clock *= 2;
 		dev_dbg(hdmi->dev, "clock = %d, refresh rate = %d\n",
-			mode->clock, drm_mode_vrefresh(mode));
+			clock, drm_mode_vrefresh(mode));
 	}
 
 	drm_mode_debug_printmodeline(mode);
 	hdmi_mutex_lock(&hdmi->hdmi_mutex);
 
 	/* pixel clock too high for sink? */
-	if (mode->clock > HDMI_TX_PIXEL_MAXRATE)
+	if (clock > HDMI_TX_PIXEL_MAXRATE)
 		status = MODE_CLOCK_HIGH;
 	hdmi_mutex_unlock(&hdmi->hdmi_mutex);
 
@@ -3136,6 +3136,11 @@ static u64 xlnx_hdmi_get_tmdsclk(struct xlnx_hdmi *hdmi, struct drm_display_mode
 	u64 tmdsclk;
 
 	tmdsclk = adjusted_mode->clock * 1000;
+
+	if ((adjusted_mode->flags & DRM_MODE_FLAG_DBLCLK) &&
+	    (adjusted_mode->flags & DRM_MODE_FLAG_INTERLACE))
+		tmdsclk *= 2;
+
 	if (hdmi->xvidc_colorfmt == HDMI_TX_CSF_YCRCB_420)
 		tmdsclk = tmdsclk >> 1;
 
