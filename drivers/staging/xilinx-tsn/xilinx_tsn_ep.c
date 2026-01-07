@@ -359,6 +359,34 @@ static int tsn_ethtools_get_ts_info(struct net_device *ndev,
 }
 #endif
 
+static int tsn_ethtool_get_link_ksettings(struct net_device *ndev,
+					  struct ethtool_link_ksettings *cmd)
+{
+	struct ethtool_link_ksettings ecmd_mac1, ecmd_mac2;
+	struct axienet_local *lp = netdev_priv(ndev);
+	int ret_mac1 = -1, ret_mac2 = -1;
+
+	if (lp->slaves[0])
+		ret_mac1 = __ethtool_get_link_ksettings(lp->slaves[0],
+							&ecmd_mac1);
+
+	if (lp->slaves[1])
+		ret_mac2 = __ethtool_get_link_ksettings(lp->slaves[1],
+							&ecmd_mac2);
+
+	if (ret_mac1 < 0 && ret_mac2 < 0)
+		return -ENODEV;
+	else if (ret_mac1 < 0)
+		cmd->base.speed = ecmd_mac2.base.speed;
+	else if (ret_mac2 < 0)
+		cmd->base.speed = ecmd_mac1.base.speed;
+	else
+		cmd->base.speed = min(ecmd_mac1.base.speed,
+				      ecmd_mac2.base.speed);
+
+	return 0;
+}
+
 static const struct ethtool_ops ep_ethtool_ops = {
 	.supported_coalesce_params = ETHTOOL_COALESCE_MAX_FRAMES,
 	.get_sset_count	 = axienet_sset_count_tsn,
@@ -369,6 +397,7 @@ static const struct ethtool_ops ep_ethtool_ops = {
 #if IS_ENABLED(CONFIG_XILINX_TSN_PTP)
 	.get_ts_info    = tsn_ethtools_get_ts_info,
 #endif
+	.get_link_ksettings = tsn_ethtool_get_link_ksettings,
 };
 
 static const struct net_device_ops ep_netdev_ops = {
