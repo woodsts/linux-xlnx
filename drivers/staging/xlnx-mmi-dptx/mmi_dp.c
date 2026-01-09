@@ -201,7 +201,7 @@ again:
 	retval = mmi_dp_handle_aux_reply(dptx);
 
 	if (retval == -ETIMEDOUT) {
-		dptx_err(dptx, "AUX timed out\n");
+		dev_err_ratelimited(dptx->dev, "AUX timed out\n");
 		goto again;
 	}
 
@@ -229,7 +229,7 @@ again:
 	case DPTX_AUX_STS_STATUS_ACK:
 		dptx_dbg(dptx, "AUX Success\n");
 		if (!br) {
-			dptx_err(dptx, "BR=0, Retry\n");
+			dev_err_ratelimited(dptx->dev, "BR=0, Retry\n");
 			mmi_dp_soft_reset(dptx, DPTX_SRST_CTRL_AUX);
 			goto again;
 		}
@@ -240,10 +240,10 @@ again:
 		return -EINVAL;
 	case DPTX_AUX_STS_STATUS_I2C_DEFER:
 	case DPTX_AUX_STS_STATUS_DEFER:
-		dptx_dbg(dptx, "AUX Defer\n");
+		dev_dbg_ratelimited(dptx->dev, "AUX Defer\n");
 		goto again;
 	default:
-		dptx_err(dptx, "AUX Status Invalid\n");
+		dev_err_ratelimited(dptx->dev, "AUX Status Invalid\n");
 		mmi_dp_soft_reset(dptx, DPTX_SRST_CTRL_AUX);
 		goto again;
 	}
