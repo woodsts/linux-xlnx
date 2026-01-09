@@ -774,8 +774,23 @@ static int xlnx_sdi_get_modes(struct drm_connector *connector)
 static int xlnx_sdi_mode_valid(struct drm_connector *connector,
 			       struct drm_display_mode *mode)
 {
-	if (mode->flags & DRM_MODE_FLAG_INTERLACE)
-		mode->vdisplay /= 2;
+	/* Basic sanity checks */
+	if (mode->hdisplay <= 0 || mode->vdisplay <= 0)
+		return MODE_BAD;
+
+	/* Pixel clock must be present */
+	if (mode->clock <= 0)
+		return MODE_NOCLOCK;
+
+	/* Basic raster check for hdisplay & vdisplay */
+	if (((mode->hsync_start <= mode->hdisplay) ||
+	     (mode->hsync_end   <= mode->hsync_start) ||
+	     (mode->htotal      <= mode->hsync_end)) ||
+	    ((mode->vsync_start <= mode->vdisplay) ||
+	     (mode->vsync_end   <= mode->vsync_start) ||
+	     (mode->vtotal      <= mode->vsync_end))) {
+		return MODE_BAD;
+	}
 
 	return MODE_OK;
 }
@@ -1018,7 +1033,7 @@ static void xlnx_sdi_setup(struct xlnx_sdi *sdi)
  */
 static void xlnx_sdi_encoder_atomic_mode_set(struct drm_encoder *encoder,
 					     struct drm_crtc_state *crtc_state,
-				  struct drm_connector_state *connector_state)
+					     struct drm_connector_state *connector_state)
 {
 	struct xlnx_sdi *sdi = encoder_to_sdi(encoder);
 	struct drm_display_mode *adjusted_mode = &crtc_state->adjusted_mode;
@@ -1029,34 +1044,30 @@ static void xlnx_sdi_encoder_atomic_mode_set(struct drm_encoder *encoder,
 	int ret;
 
 	/*
-	 * For the transceiver TX, for integer and fractional frame rate, the
-	 * PLL ref clock must be a different frequency. Other than SD mode
-	 * its 148.5MHz for an integer & 148.5/1.001 for fractional framerate.
-	 * Program clocks followed by reset, if picxo is not enabled.
+	 * Transceiver TX: integer vs fractional frame rate clocking.
+	 * For non-SD modes, fractional uses 148.5/1.001 MHz.
+	 * Program clocks then reset GT if PICXO is disabled.
 	 */
 	if (!sdi->picxo_enabled) {
-		if (sdi->is_frac_prop_val &&
-		    sdi->sdi_mod_prop_val != XSDI_MODE_SD)
+		if (sdi->is_frac_prop_val && sdi->sdi_mod_prop_val != XSDI_MODE_SD)
 			clkrate = (CLK_RATE * 1000) / 1001;
 		else
 			clkrate = CLK_RATE;
+
 		ret = clk_set_rate(sdi->sditx_clk, clkrate);
 		if (ret)
-			dev_err(sdi->dev, "failed to set clk rate = %lu\n",
-				clkrate);
+			dev_err(sdi->dev, "failed to set clk rate = %lu\n", clkrate);
+
 		clkrate = clk_get_rate(sdi->sditx_clk);
-		dev_info(sdi->dev, "clkrate = %lu is_frac = %d\n", clkrate,
-			 sdi->is_frac_prop_val);
-		/*
-		 * Delay required to get QPLL1 lock as per the si5328
-		 * datasheet
-		 */
+		dev_info(sdi->dev, "clkrate = %lu is_frac = %d\n", clkrate, sdi->is_frac_prop_val);
+
+		/* QPLL1 lock time (si5328 datasheet guidance) */
 		mdelay(50);
 		if (sdi->gt_rst_gpio)
 			xlnx_sdi_gt_reset(sdi);
 	}
 
-	/* Set timing parameters as per bridge output parameters */
+	/* Configure bridge input/output timing and formats */
 	xlnx_bridge_set_input(sdi->bridge, adjusted_mode->hdisplay,
 			      adjusted_mode->vdisplay, sdi->in_fmt_prop_val);
 	xlnx_bridge_set_output(sdi->bridge, sdi->width_out_prop_val,
@@ -1065,66 +1076,62 @@ static void xlnx_sdi_encoder_atomic_mode_set(struct drm_encoder *encoder,
 
 	if (sdi->bridge) {
 		for (i = 0; i < ARRAY_SIZE(xlnx_sdi_modes); i++) {
-			if (xlnx_sdi_modes[i].mode.hdisplay ==
-			    sdi->width_out_prop_val &&
-			    xlnx_sdi_modes[i].mode.vdisplay ==
-			    sdi->height_out_prop_val &&
-			    adjusted_mode->flags == xlnx_sdi_modes[i].mode.flags &&
-			    drm_mode_vrefresh(&xlnx_sdi_modes[i].mode) ==
+			const struct drm_display_mode *sdi_ref_mode =
+				&xlnx_sdi_modes[i].mode;
+
+			if (sdi_ref_mode->hdisplay == sdi->width_out_prop_val &&
+			    sdi_ref_mode->vdisplay == sdi->height_out_prop_val &&
+			    adjusted_mode->flags == sdi_ref_mode->flags &&
+			    drm_mode_vrefresh(sdi_ref_mode) ==
 			    drm_mode_vrefresh(adjusted_mode)) {
 				memcpy((char *)adjusted_mode +
-				       offsetof(struct drm_display_mode,
-						clock),
-				       &xlnx_sdi_modes[i].mode.clock,
+				       offsetof(struct drm_display_mode, clock),
+				       &sdi_ref_mode->clock,
 				       SDI_TIMING_PARAMS_SIZE);
 				break;
 			}
 		}
 	}
 
-	/* If HFR video is streaming */
+	/* HFR stream flag */
 	if (drm_mode_vrefresh(adjusted_mode) >= XSDI_HFR_MIN_FPS)
 		sdi->is_hfr = 1;
 
 	xlnx_sdi_setup(sdi);
 	xlnx_sdi_set_config_parameters(sdi);
 
-	/* set st352 payloads */
+	/* ST352 payload composition and write to all streams */
 	payload = xlnx_sdi_calc_st352_payld(sdi, adjusted_mode);
-	dev_dbg(sdi->dev, "payload : %0x\n", payload);
+	dev_dbg(sdi->dev, "payload : %08x\n", payload);
 
 	for (i = 0; i < sdi->sdi_data_strm_prop_val / 2; i++) {
 		if (sdi->sdi_mod_prop_val == XSDI_MODE_3GB)
-			payload |= (i << 1) << XSDI_CH_SHIFT;
+			payload |= ((i << 1) << XSDI_CH_SHIFT); /* channel id bits per stream */
+
 		xlnx_sdi_set_payload_data(sdi, i, payload);
 	}
 
-	/* UHDSDI is fixed 2 pixels per clock, horizontal timings div by 2 */
-	vm.hactive = adjusted_mode->hdisplay / PIXELS_PER_CLK;
-	vm.hfront_porch = (adjusted_mode->hsync_start -
-			  adjusted_mode->hdisplay) / PIXELS_PER_CLK;
-	vm.hback_porch = (adjusted_mode->htotal -
-			 adjusted_mode->hsync_end) / PIXELS_PER_CLK;
-	vm.hsync_len = (adjusted_mode->hsync_end -
-		       adjusted_mode->hsync_start) / PIXELS_PER_CLK;
+	/* --- Build videomode for SDI timing --- */
+	/* UHDSDI is 2 pixels/clock: horizontal fields in "clocks" */
+	vm.hactive      = adjusted_mode->hdisplay / PIXELS_PER_CLK;
+	vm.hfront_porch = (adjusted_mode->hsync_start - adjusted_mode->hdisplay) / PIXELS_PER_CLK;
+	vm.hback_porch  = (adjusted_mode->htotal - adjusted_mode->hsync_end)     / PIXELS_PER_CLK;
+	vm.hsync_len    = (adjusted_mode->hsync_end - adjusted_mode->hsync_start) / PIXELS_PER_CLK;
 
-	vm.vactive = adjusted_mode->vdisplay;
+	/* Vertical: field-aware values for interlaced timings */
 	if (adjusted_mode->flags & DRM_MODE_FLAG_INTERLACE) {
-		vm.vfront_porch = adjusted_mode->vsync_start / 2 -
-				  adjusted_mode->vdisplay;
-		vm.vback_porch = (adjusted_mode->vtotal -
-				  adjusted_mode->vsync_end) / 2;
-		vm.vsync_len = (adjusted_mode->vsync_end -
-				adjusted_mode->vsync_start) / 2;
+		vm.vactive      = adjusted_mode->vdisplay / 2;
+		vm.vfront_porch = (adjusted_mode->vsync_start - adjusted_mode->vdisplay) / 2;
+		vm.vback_porch  = (adjusted_mode->vtotal - adjusted_mode->vsync_end)     / 2;
+		vm.vsync_len    = (adjusted_mode->vsync_end - adjusted_mode->vsync_start) / 2;
 	} else {
-		vm.vfront_porch = adjusted_mode->vsync_start -
-				  adjusted_mode->vdisplay;
-		vm.vback_porch = adjusted_mode->vtotal -
-				 adjusted_mode->vsync_end;
-		vm.vsync_len = adjusted_mode->vsync_end -
-			       adjusted_mode->vsync_start;
+		vm.vactive      = adjusted_mode->vdisplay;
+		vm.vfront_porch = adjusted_mode->vsync_start - adjusted_mode->vdisplay;
+		vm.vback_porch  = adjusted_mode->vtotal - adjusted_mode->vsync_end;
+		vm.vsync_len    = adjusted_mode->vsync_end - adjusted_mode->vsync_start;
 	}
 
+	/* Polarity/flags */
 	vm.flags = 0;
 	if (adjusted_mode->flags & DRM_MODE_FLAG_INTERLACE)
 		vm.flags |= DISPLAY_FLAGS_INTERLACED;
@@ -1133,31 +1140,30 @@ static void xlnx_sdi_encoder_atomic_mode_set(struct drm_encoder *encoder,
 	if (adjusted_mode->flags & DRM_MODE_FLAG_PVSYNC)
 		vm.flags |= DISPLAY_FLAGS_VSYNC_LOW;
 
+	/* Compensate blanking mismatch between VTC and SDI TX */
 	do {
-		sditx_blank = (adjusted_mode->hsync_start -
-			       adjusted_mode->hdisplay) +
-			      (adjusted_mode->hsync_end -
-			       adjusted_mode->hsync_start) +
-			      (adjusted_mode->htotal -
-			       adjusted_mode->hsync_end);
+		sditx_blank = (adjusted_mode->hsync_start - adjusted_mode->hdisplay) +
+			      (adjusted_mode->hsync_end   - adjusted_mode->hsync_start) +
+			      (adjusted_mode->htotal      - adjusted_mode->hsync_end);
 
-		vtc_blank = (vm.hfront_porch + vm.hback_porch +
-			     vm.hsync_len) * PIXELS_PER_CLK;
+		vtc_blank   = (vm.hfront_porch + vm.hback_porch + vm.hsync_len) * PIXELS_PER_CLK;
 
 		if (vtc_blank != sditx_blank)
 			vm.hfront_porch++;
 	} while (vtc_blank < sditx_blank);
 
+	/* DRM mode->clock is kHz; videomode->pixelclock uses Hz */
 	vm.pixelclock = adjusted_mode->clock * 1000;
 
-	/* parameters for sdi audio */
+	/* Cache for SDI audio/ANC paths */
 	sdi->video_mode.vdisplay = adjusted_mode->vdisplay;
 	sdi->video_mode.hdisplay = adjusted_mode->hdisplay;
-	sdi->video_mode.flags = adjusted_mode->flags;
-	sdi->video_mode.htotal = adjusted_mode->htotal;
-	sdi->video_mode.vtotal = adjusted_mode->vtotal;
-	sdi->video_mode.clock = adjusted_mode->clock;
+	sdi->video_mode.flags    = adjusted_mode->flags;
+	sdi->video_mode.htotal   = adjusted_mode->htotal;
+	sdi->video_mode.vtotal   = adjusted_mode->vtotal;
+	sdi->video_mode.clock    = adjusted_mode->clock;
 
+	/* Program timing generator (xlnx_sdi_timing.c handles interlace F0/F1, polarity, etc.) */
 	xlnx_stc_sig(sdi->base, &vm);
 }
 
