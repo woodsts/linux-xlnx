@@ -150,13 +150,10 @@ int mmi_dc_create_planes(struct mmi_dc *dc, struct drm_device *drm)
 
 	for (i = 0; i < ARRAY_SIZE(dc->planes); ++i) {
 		struct mmi_dc_plane *plane = factory[i](dc, drm, i);
-		int ret;
 
-		if (IS_ERR(plane)) {
-			ret = PTR_ERR(plane);
-			dev_err(dc->dev, "failed to create plane: %d\n", ret);
-			return ret;
-		}
+		if (IS_ERR(plane))
+			return dev_err_probe(dc->dev, PTR_ERR(plane),
+					     "failed to create plane\n");
 
 		dc->planes[i] = plane;
 	}
