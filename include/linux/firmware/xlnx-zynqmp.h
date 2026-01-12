@@ -3,7 +3,7 @@
  * Xilinx Zynq MPSoC Firmware layer
  *
  *  Copyright (C) 2014-2021 Xilinx
- *  Copyright (C) 2022 - 2025, Advanced Micro Devices, Inc.
+ *  Copyright (C) 2022 - 2025 Advanced Micro Devices, Inc.
  *
  *  Michal Simek <michal.simek@amd.com>
  *  Davorin Mista <davorin.mista@aggios.com>
@@ -21,6 +21,7 @@
 #include <linux/firmware/xlnx-zynqmp-pdi.h>
 #include <linux/firmware/xlnx-zynqmp-crypto.h>
 #include <linux/firmware/xlnx-zynqmp-sem.h>
+#include <linux/firmware/xlnx-zynqmp-ufs.h>
 
 #define ZYNQMP_PM_VERSION_MAJOR	1
 #define ZYNQMP_PM_VERSION_MINOR	0
@@ -606,6 +607,7 @@ int zynqmp_pm_fw_call_extended(u32 pm_api_id, u32 *ret_payload, u32 num_args, ..
 int zynqmp_firmware_pm_sysfs_entry(struct platform_device *pdev);
 
 #if IS_REACHABLE(CONFIG_ZYNQMP_FIRMWARE)
+int zynqmp_pm_init_finalize(void);
 int zynqmp_pm_get_api_version(u32 *version);
 int zynqmp_pm_get_chipid(u32 *idcode, u32 *version);
 int zynqmp_pm_get_family_info(u32 *family);
@@ -631,7 +633,6 @@ int zynqmp_pm_reset_assert(const u32 reset,
 int zynqmp_pm_reset_get_status(const u32 reset, u32 *status);
 unsigned int zynqmp_pm_bootmode_read(u32 *ps_mode);
 int zynqmp_pm_bootmode_write(u32 ps_mode);
-int zynqmp_pm_init_finalize(void);
 int zynqmp_pm_set_suspend_mode(u32 mode);
 int zynqmp_pm_request_node(const u32 node, const u32 capabilities,
 			   const u32 qos, const enum zynqmp_pm_request_ack ack);
@@ -805,11 +806,6 @@ static inline unsigned int zynqmp_pm_bootmode_read(u32 *ps_mode)
 }
 
 static inline int zynqmp_pm_bootmode_write(u32 ps_mode)
-{
-	return -ENODEV;
-}
-
-static inline int zynqmp_pm_init_finalize(void)
 {
 	return -ENODEV;
 }

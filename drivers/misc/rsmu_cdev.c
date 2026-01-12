@@ -349,7 +349,7 @@ rsmu_probe(struct platform_device *pdev)
 	rsmu->type = ddata->type;
 	rsmu->lock = &ddata->lock;
 	rsmu->regmap = ddata->regmap;
-	rsmu->index = ida_simple_get(&rsmu_cdev_map, 0, MINORMASK + 1, GFP_KERNEL);
+	rsmu->index = ida_alloc_max(&rsmu_cdev_map, MINORMASK, GFP_KERNEL);
 	if (rsmu->index < 0) {
 		dev_err(rsmu->dev, "Unable to get index %d\n", rsmu->index);
 		return rsmu->index;
@@ -359,7 +359,7 @@ rsmu_probe(struct platform_device *pdev)
 	err = rsmu_init_ops(rsmu);
 	if (err) {
 		dev_err(rsmu->dev, "Unknown SMU type %d", rsmu->type);
-		ida_simple_remove(&rsmu_cdev_map, rsmu->index);
+		ida_free(&rsmu_cdev_map, rsmu->index);
 		return err;
 	}
 
@@ -367,7 +367,7 @@ rsmu_probe(struct platform_device *pdev)
 		err = rsmu->ops->get_fw_version(rsmu);
 		if (err) {
 			dev_err(rsmu->dev, "Unable to get firmware version\n");
-			ida_simple_remove(&rsmu_cdev_map, rsmu->index);
+			ida_free(&rsmu_cdev_map, rsmu->index);
 			return err;
 		}
 	}
@@ -382,7 +382,7 @@ rsmu_probe(struct platform_device *pdev)
 	err = misc_register(&rsmu->miscdev);
 	if (err) {
 		dev_err(rsmu->dev, "Unable to register device\n");
-		ida_simple_remove(&rsmu_cdev_map, rsmu->index);
+		ida_free(&rsmu_cdev_map, rsmu->index);
 		return -ENODEV;
 	}
 
@@ -396,7 +396,7 @@ rsmu_remove(struct platform_device *pdev)
 	struct rsmu_cdev *rsmu = platform_get_drvdata(pdev);
 
 	misc_deregister(&rsmu->miscdev);
-	ida_simple_remove(&rsmu_cdev_map, rsmu->index);
+	ida_free(&rsmu_cdev_map, rsmu->index);
 }
 
 static const struct platform_device_id rsmu_id_table[] = {

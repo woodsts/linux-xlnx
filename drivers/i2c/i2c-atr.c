@@ -738,7 +738,7 @@ struct i2c_atr *i2c_atr_new(struct i2c_adapter *parent, struct device *dev,
 	atr->flags = flags;
 
 	if (parent->algo->master_xfer)
-		atr->algo.master_xfer = i2c_atr_master_xfer;
+		atr->algo.xfer = i2c_atr_master_xfer;
 	if (parent->algo->smbus_xfer)
 		atr->algo.smbus_xfer = i2c_atr_smbus_xfer;
 	atr->algo.functionality = i2c_atr_functionality;
@@ -763,7 +763,7 @@ err_destroy_mutex:
 
 	return ERR_PTR(ret);
 }
-EXPORT_SYMBOL_NS_GPL(i2c_atr_new, I2C_ATR);
+EXPORT_SYMBOL_NS_GPL(i2c_atr_new, "I2C_ATR");
 
 void i2c_atr_delete(struct i2c_atr *atr)
 {
@@ -778,7 +778,7 @@ void i2c_atr_delete(struct i2c_atr *atr)
 	lockdep_unregister_key(&atr->lock_key);
 	kfree(atr);
 }
-EXPORT_SYMBOL_NS_GPL(i2c_atr_delete, I2C_ATR);
+EXPORT_SYMBOL_NS_GPL(i2c_atr_delete, "I2C_ATR");
 
 int i2c_atr_add_adapter(struct i2c_atr *atr, struct i2c_atr_adap_desc *desc)
 {
@@ -895,7 +895,7 @@ err_fwnode_put:
 	kfree(chan);
 	return ret;
 }
-EXPORT_SYMBOL_NS_GPL(i2c_atr_add_adapter, I2C_ATR);
+EXPORT_SYMBOL_NS_GPL(i2c_atr_add_adapter, "I2C_ATR");
 
 void i2c_atr_del_adapter(struct i2c_atr *atr, u32 chan_id)
 {
@@ -934,19 +934,19 @@ void i2c_atr_del_adapter(struct i2c_atr *atr, u32 chan_id)
 	kfree(chan->orig_addrs);
 	kfree(chan);
 }
-EXPORT_SYMBOL_NS_GPL(i2c_atr_del_adapter, I2C_ATR);
+EXPORT_SYMBOL_NS_GPL(i2c_atr_del_adapter, "I2C_ATR");
 
 void i2c_atr_set_driver_data(struct i2c_atr *atr, void *data)
 {
 	atr->priv = data;
 }
-EXPORT_SYMBOL_NS_GPL(i2c_atr_set_driver_data, I2C_ATR);
+EXPORT_SYMBOL_NS_GPL(i2c_atr_set_driver_data, "I2C_ATR");
 
 void *i2c_atr_get_driver_data(struct i2c_atr *atr)
 {
 	return atr->priv;
 }
-EXPORT_SYMBOL_NS_GPL(i2c_atr_get_driver_data, I2C_ATR);
+EXPORT_SYMBOL_NS_GPL(i2c_atr_get_driver_data, "I2C_ATR");
 
 MODULE_AUTHOR("Luca Ceresoli <luca.ceresoli@bootlin.com>");
 MODULE_AUTHOR("Tomi Valkeinen <tomi.valkeinen@ideasonboard.com>");

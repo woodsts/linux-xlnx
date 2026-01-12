@@ -2146,7 +2146,8 @@ static void xlnx_mix_plane_atomic_disable(struct drm_plane *plane,
 }
 
 static int xlnx_mix_plane_atomic_async_check(struct drm_plane *plane,
-					     struct drm_atomic_state *state)
+					     struct drm_atomic_state *state,
+					     bool flip)
 {
 	return 0;
 }

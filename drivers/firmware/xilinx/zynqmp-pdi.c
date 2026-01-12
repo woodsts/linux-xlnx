@@ -145,7 +145,7 @@ static const struct attribute *firmware_attrs[] = {
 };
 
 static ssize_t firmware_uid_get_data(struct file *filp, struct kobject *kobj,
-				     struct bin_attribute *attr, char *buf,
+				     const struct bin_attribute *attr, char *buf,
 				     loff_t off, size_t count)
 {
 	struct device *kdev = kobj_to_dev(kobj);
@@ -181,7 +181,7 @@ static const struct bin_attribute uid_attr = {
 
 static ssize_t firmware_meta_header_get_data(struct file *filp,
 					     struct kobject *kobj,
-					     struct bin_attribute *attr,
+					     const struct bin_attribute *attr,
 					     char *buf, loff_t off,
 					     size_t count)
 {

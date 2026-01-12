@@ -2796,7 +2796,7 @@ xlnx_dp_connector_best_encoder(struct drm_connector *connector)
 }
 
 static int xlnx_dp_connector_mode_valid(struct drm_connector *connector,
-					struct drm_display_mode *mode)
+					const struct drm_display_mode *mode)
 {
 	struct xlnx_dp *dp = connector_to_dp(connector);
 	u8 max_lanes = dp->link_config.max_lanes;

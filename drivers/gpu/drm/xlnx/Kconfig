@@ -22,6 +22,7 @@ config DRM_ZYNQMP_DPSUB
 	depends on PHY_XILINX_ZYNQMP
 	depends on XILINX_ZYNQMP_DPDMA
 	select DMA_ENGINE
+	select DRM_CLIENT_SELECTION
 	select DRM_DISPLAY_DP_HELPER
 	select DRM_DISPLAY_HELPER
 	select DRM_BRIDGE_CONNECTOR
@@ -37,6 +38,7 @@ config DRM_ZYNQMP_DPSUB_AUDIO
 	bool "ZynqMP DisplayPort Audio Support"
 	depends on DRM_ZYNQMP_DPSUB
 	depends on SND && SND_SOC
+	depends on SND_SOC=y || DRM_ZYNQMP_DPSUB=m
 	select SND_SOC_GENERIC_DMAENGINE_PCM
 	help
 	  Choose this option to enable DisplayPort audio support in the ZynqMP
@@ -45,6 +47,7 @@ config DRM_ZYNQMP_DPSUB_AUDIO
 config DRM_XLNX
 	tristate "Xilinx DRM KMS Driver"
 	depends on DRM && OF && SND
+	select DRM_CLIENT_SELECTION
 	select DRM_KMS_HELPER
 	select DRM_KMS_DMA_HELPER
 	select DRM_GEM_DMA_HELPER
@@ -94,7 +97,6 @@ config DRM_XLNX_DPTX
 	select DRM_DISPLAY_HDMI_HELPER
 	select DRM_DISPLAY_DP_HELPER
 	select DRM_XLNX_HDCP
-	select PHY_XILINX_DPGTQUAD
 	select MFD_SYSCON
 	help
 	  DRM driver for Xilinx DisplayPort Tx Subsystem for FPGA. Choose

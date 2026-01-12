@@ -1,19 +1,20 @@
 # SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
-# %YAML 1.2
+%YAML 1.2
 ---
 $id: http://devicetree.org/schemas/sound/xlnx,spdif.yaml#
 $schema: http://devicetree.org/meta-schemas/core.yaml#
 
 title: Xilinx S/PDIF/AES3 Playback/Capture audio system
 
-maintainers:
-  - Katta Dhanunjanrao <katta.dhanunjanrao@amd.com>
-
 description:
   IP SPDIF/AES3 cores are soft IP cores in AMD Vivado.
   The Sony/Philips Digital Interconnect Format (SPDIF) and AES3
   are digital audio interfaces that implements the IEC 60958 interface
   for transmitting and receiving audio data.
+
+maintainers:
+  - Vincenzo Frascino <vincenzo.frascino@arm.com>
+  - Katta Dhanunjanrao <katta.dhanunjanrao@amd.com>
 
 properties:
   compatible:
@@ -22,6 +23,12 @@ properties:
   reg:
     maxItems: 1
 
+  interrupts:
+    maxItems: 1
+
+  clock-names:
+    maxItems: 3
+
   clocks:
     description: List of clock specifiers.
     items:
@@ -29,33 +36,32 @@ properties:
       - description: Axi4-Lite clock.
       - description: Axi4-Stream global clock signal.
 
-  clock-names:
-    maxItems: 3
-
-  interrupts:
-    maxItems: 1
-
   xlnx,spdif-mode:
-    description: Mode of spdif IP operation either playback or capture.
-                 0 - is for receiver mode and 1 - is for the transmitter mode.
     $ref: /schemas/types.yaml#/definitions/uint32
-    enum: [0, 1]
+    enum:
+      - 0
+      - 1
+    description: |
+      0 - receiver
+      1 - transmitter
 
   xlnx,snd-pcm:
     description: Reference to audio formatter block.
     $ref: /schemas/types.yaml#/definitions/phandle
 
 required:
+  - compatible
   - reg
-  - clocks
-  - clock-names
   - interrupts
+  - clock-names
+  - clocks
   - xlnx,spdif-mode
   - xlnx,snd-pcm
 
 additionalProperties: false
 
 allOf:
+  - $ref: dai-common.yaml#
   - if:
       properties:
         xlnx,spdif-mode:
@@ -77,12 +83,12 @@ allOf:
 
 examples:
   - |
-    spdif@800a0000 {
+    spdif@80010000 {
       compatible = "xlnx,spdif-2.0";
-      reg = <0x800a0000 0x10000>;
-      clocks = <&misc_clk_0>, <&zynqmp_clk 71>, <&misc_clk_0>;
+      reg = <0x80010000 0x10000>;
       clock-names = "aud_clk_i", "s_axi_aclk", "s_axis_aclk";
-      interrupts = <0 89 4>;
+      clocks = <&misc_clk_0>, <&zynqmp_clk 71>, <&misc_clk_0>;
+      interrupts = <0 91 4>;
       xlnx,spdif-mode = <1>;
       xlnx,snd-pcm = <&audio_formatter>;
     };

@@ -114,9 +114,9 @@ static void mmi_dc_copy_display_mode(struct drm_display_mode *dst,
  */
 
 static int mmi_dc_planector_bridge_attach(struct drm_bridge *bridge,
+					  struct drm_encoder *encoder,
 					  enum drm_bridge_attach_flags flags)
 {
-	struct drm_encoder *encoder = bridge->encoder;
 	struct drm_connector *connector;
 	int ret;
 
@@ -136,11 +136,11 @@ static int mmi_dc_planector_bridge_attach(struct drm_bridge *bridge,
 
 static void
 mmi_dc_planector_bridge_enable(struct drm_bridge *bridge,
-			       struct drm_bridge_state *old_state)
+			       struct drm_atomic_state *old_state)
 {
 	struct mmi_dc_planector *planector = bridge_to_planector(bridge);
 	struct drm_bridge_state *new_state =
-		drm_atomic_get_new_bridge_state(old_state->base.state, bridge);
+		drm_atomic_get_new_bridge_state(old_state, bridge);
 	const struct mmi_dc_format *format =
 		mmi_dc_find_live_format(new_state->input_bus_cfg.format);
 
@@ -154,7 +154,7 @@ mmi_dc_planector_bridge_enable(struct drm_bridge *bridge,
 
 static void
 mmi_dc_planector_bridge_disable(struct drm_bridge *bridge,
-				struct drm_bridge_state *old_state)
+				struct drm_atomic_state *old_state)
 {
 	struct mmi_dc_planector *planector = bridge_to_planector(bridge);
 
@@ -164,7 +164,7 @@ mmi_dc_planector_bridge_disable(struct drm_bridge *bridge,
 }
 
 static enum drm_connector_status
-mmi_dc_planector_bridge_detect(struct drm_bridge *bridge)
+mmi_dc_planector_bridge_detect(struct drm_bridge *bridge, struct drm_connector *connector)
 {
 	struct mmi_dc_planector *planector = bridge_to_planector(bridge);
 

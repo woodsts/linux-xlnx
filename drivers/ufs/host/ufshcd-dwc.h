@@ -12,9 +12,6 @@
 
 #include <ufs/ufshcd.h>
 
-/* PHY modes */
-#define UFSHCD_DWC_PHY_MODE_ROM         0
-
 /* RMMI Attributes */
 #define CBREFCLKCTRL2		0x8132
 #define CBCRCTRL		0x811F

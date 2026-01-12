@@ -288,29 +288,6 @@ static void otg_ulpi_init(struct usb_phy *phy, struct usb_otg *otg,
 }
 
 struct usb_phy *
-otg_ulpi_create(struct usb_phy_io_ops *ops,
-		unsigned int flags)
-{
-	struct usb_phy *phy;
-	struct usb_otg *otg;
-
-	phy = kzalloc(sizeof(*phy), GFP_KERNEL);
-	if (!phy)
-		return NULL;
-
-	otg = kzalloc(sizeof(*otg), GFP_KERNEL);
-	if (!otg) {
-		kfree(phy);
-		return NULL;
-	}
-
-	otg_ulpi_init(phy, otg, ops, flags);
-
-	return phy;
-}
-EXPORT_SYMBOL_GPL(otg_ulpi_create);
-
-struct usb_phy *
 devm_otg_ulpi_create(struct device *dev,
 		     struct usb_phy_io_ops *ops,
 		     unsigned int flags)
@@ -363,7 +340,8 @@ static int ulpi_phy_probe(struct platform_device *pdev)
 	if (ret)
 		return ret;
 
-	uphy->usb_phy = otg_ulpi_create(&ulpi_viewport_access_ops, uphy->flags);
+	uphy->usb_phy = devm_otg_ulpi_create(&pdev->dev, &ulpi_viewport_access_ops,
+					     uphy->flags);
 	if (!uphy->usb_phy) {
 		dev_err(&pdev->dev, "Failed to create ULPI OTG\n");
 		return -ENOMEM;

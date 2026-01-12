@@ -1,4 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0-only
+menu "Xilinx"
+
 config SND_SOC_XILINX_SDI
 	tristate "Audio support for the the Xilinx SDI"
 	depends on DRM_XLNX_SDI
@@ -38,3 +40,5 @@ config SND_SOC_XILINX_PL_SND_CARD
 	  Select this option to enable Xilinx PL sound card
 	  support. This enables sound card using xilinx soft IPs
 	  in audio pipeline.
+
+endmenu

@@ -667,24 +667,13 @@ static const struct mipi_dsi_host_ops xlnx_dsi_ops = {
 static int xlnx_dsi_connector_dpms(struct drm_connector *connector, int mode)
 {
 	struct xlnx_dsi *dsi = connector_to_dsi(connector);
-	int ret;
 
 	dev_dbg(dsi->dev, "connector dpms state: %d\n", mode);
 
 	switch (mode) {
 	case DRM_MODE_DPMS_ON:
-		ret = drm_panel_prepare(dsi->panel);
-		if (ret < 0) {
-			dev_err(dsi->dev, "DRM panel not found\n");
-			return ret;
-		}
-
-		ret = drm_panel_enable(dsi->panel);
-		if (ret < 0) {
-			drm_panel_unprepare(dsi->panel);
-			dev_err(dsi->dev, "DRM panel not enabled\n");
-			return ret;
-		}
+		drm_panel_prepare(dsi->panel);
+		drm_panel_enable(dsi->panel);
 		break;
 	default:
 		drm_panel_disable(dsi->panel);

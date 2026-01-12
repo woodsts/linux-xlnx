@@ -56,7 +56,7 @@
 	status = "okay";
 	num-cs = <1>;
 	flash@0 { /* 16 MB */
-		compatible = "n25q128a11", "jedec,spi-nor";
+		compatible = "jedec,spi-nor";
 		reg = <0x0>;
 		spi-max-frequency = <50000000>;
 		spi-tx-bus-width = <1>;

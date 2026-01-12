@@ -182,12 +182,11 @@ static struct drm_driver xlnx_drm_driver = {
 	.open				= xlnx_drm_open,
 
 	DRM_GEM_DMA_DRIVER_OPS_VMAP_WITH_DUMB_CREATE(xlnx_gem_cma_dumb_create),
-
+	XLNX_DRM_FBDEV_DRIVER_OPS,
 	.fops				= &xlnx_fops,
 
 	.name				= DRIVER_NAME,
 	.desc				= DRIVER_DESC,
-	.date				= DRIVER_DATE,
 	.major				= DRIVER_MAJOR,
 	.minor				= DRIVER_MINOR,
 };

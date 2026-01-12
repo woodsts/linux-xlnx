@@ -186,7 +186,6 @@ static int zynqmp_dpsub_parse_dt(struct zynqmp_dpsub *dpsub)
 void zynqmp_dpsub_release(struct zynqmp_dpsub *dpsub)
 {
 	kfree(dpsub->disp);
-	kfree(dpsub->dp);
 	kfree(dpsub);
 }
 
@@ -307,7 +306,7 @@ MODULE_DEVICE_TABLE(of, zynqmp_dpsub_of_match);
 
 static struct platform_driver zynqmp_dpsub_driver = {
 	.probe			= zynqmp_dpsub_probe,
-	.remove_new		= zynqmp_dpsub_remove,
+	.remove			= zynqmp_dpsub_remove,
 	.shutdown		= zynqmp_dpsub_shutdown,
 	.driver			= {
 		.name		= "zynqmp-dpsub",

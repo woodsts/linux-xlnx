@@ -1404,6 +1404,7 @@ static int mc_probe(struct platform_device *pdev)
 	priv->p_data = p_data;
 	if (!get_ecc_state(priv)) {
 		edac_printk(KERN_INFO, EDAC_MC, "ECC not enabled\n");
+		rc = -ENODEV;
 		goto free_edac_mc;
 	}
 
@@ -1482,7 +1483,7 @@ static struct platform_driver synps_edac_mc_driver = {
 		   .of_match_table = synps_edac_match,
 		   },
 	.probe = mc_probe,
-	.remove_new = mc_remove,
+	.remove = mc_remove,
 };
 
 module_platform_driver(synps_edac_mc_driver);

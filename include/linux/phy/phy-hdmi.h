@@ -1,4 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0 */
+/*
+ * Copyright 2022,2024 NXP
+ */
 
 #ifndef __PHY_HDMI_H_
 #define __PHY_HDMI_H_
@@ -37,12 +40,15 @@ struct hdmiphy_callback {
 };
 
 /**
- * struct phy_configure_opts_hdmi - HDMI PHY configuration set
+ * struct phy_configure_opts_hdmi - HDMI configuration set
+ * @tmds_char_rate: HDMI TMDS Character Rate in Hertz.
+ * @bpc: Bits per color channel.
  *
- * This structure is used to represent the configuration state of a
- * HDMI phy.
+ * This structure is used to represent the configuration state of a HDMI phy.
  */
 struct phy_configure_opts_hdmi {
+	unsigned long long tmds_char_rate;
+	unsigned int bpc;
 	/**
 	 * @tmdsclock_ratio_flag:
 	 *
@@ -184,14 +190,6 @@ struct phy_configure_opts_hdmi {
 	 * Allowed values: 1, 2, 4, 8
 	 */
 	u8 ppc;
-	/**
-	 * @bpc:
-	 *
-	 * bits per component.
-	 *
-	 * Allowed  values: 8, 10, 23, 16
-	 */
-	u8 bpc;
 	/**
 	 * @fmt:
 	 *

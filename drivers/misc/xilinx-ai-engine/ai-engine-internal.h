@@ -1082,10 +1082,10 @@ struct aie_bin_attr {
 	ssize_t size;
 	u32 tile_type;
 	ssize_t (*read)(struct file *filp, struct kobject *kobj,
-			struct bin_attribute *attr, char *buf, loff_t offset,
+			const struct bin_attribute *attr, char *buf, loff_t offset,
 			size_t max_size);
 	ssize_t (*write)(struct file *filp, struct kobject *kobj,
-			 struct bin_attribute *attr, char *buf, loff_t offset,
+			 const struct bin_attribute *attr, char *buf, loff_t offset,
 			 size_t max_size);
 	ssize_t (*read_callback)(struct kobject *kobj, char *buffer,
 				 ssize_t size);
@@ -1789,7 +1789,7 @@ void aie_part_sysfs_remove_entries(struct aie_partition *apart);
 int aie_tile_sysfs_create_entries(struct aie_tile *atile);
 void aie_tile_sysfs_remove_entries(struct aie_tile *atile);
 ssize_t aie_sysfs_read_handler(struct file *filp, struct kobject *kobj,
-			       struct bin_attribute *attr, char *buf,
+			       const struct bin_attribute *attr, char *buf,
 			       loff_t offset, size_t max_size);
 
 ssize_t aie2ps_sysfs_get_uc_core_status(struct aie_partition *apart,

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0
 /*
- * Copyright (C) 2024 Advanced Micro Devices, Inc.
+ * Copyright (C) 2025 Advanced Micro Devices, Inc.
  *
  * Authors: Sai Krishna Potthuri <sai.krishna.potthuri@amd.com>
  */
@@ -19,16 +19,8 @@
 #include "ufshcd-pltfrm.h"
 #include "ufshci-dwc.h"
 
-#define PM_REGNODE_PMC_IOU_SLCR		0x30000002
-#define PM_REGNODE_EFUSE_CACHE		0x30000003
-
-#define SRAM_CSR_OFFSET			0x104C
-#define TXRX_CFGRDY_OFFSET		0x1054
-#define UFS_CAL_1_OFFSET		0xBE8
-
-#define SRAM_CSR_INIT_DONE_MASK		BIT(0)
-#define SRAM_CSR_EXT_LD_DONE_MASK	BIT(1)
-#define SRAM_CSR_BYPASS_MASK		BIT(2)
+/* PHY modes */
+#define UFSHCD_DWC_PHY_MODE_ROM         0
 
 #define MPHY_FAST_RX_AFE_CAL		BIT(2)
 #define MPHY_FW_CALIB_CFG_VAL		BIT(8)
@@ -36,8 +28,6 @@
 #define MPHY_RX_OVRD_EN			BIT(3)
 #define MPHY_RX_OVRD_VAL		BIT(2)
 #define MPHY_RX_ACK_MASK		BIT(0)
-
-#define TX_RX_CFG_RDY_MASK      GENMASK(3, 0)
 
 #define TIMEOUT_MICROSEC	1000000
 
@@ -235,7 +225,8 @@ static int ufs_versal2_setup_phy(struct ufs_hba *hba)
 static int ufs_versal2_phy_init(struct ufs_hba *hba)
 {
 	struct ufs_versal2_host *host = ufshcd_get_variant(hba);
-	u32 reg, time_left;
+	u32 time_left;
+	bool is_ready;
 	int ret;
 	static const struct ufshcd_dme_attr_val rmmi_attrs[] = {
 		{ UIC_ARG_MIB(CBREFCLKCTRL2), CBREFREFCLK_GATE_OVR_EN, DME_LOCAL },
@@ -248,12 +239,11 @@ static int ufs_versal2_phy_init(struct ufs_hba *hba)
 	time_left = TIMEOUT_MICROSEC;
 	do {
 		time_left--;
-		ret = zynqmp_pm_sec_read_reg(PM_REGNODE_PMC_IOU_SLCR, TXRX_CFGRDY_OFFSET, &reg);
+		ret = zynqmp_pm_is_mphy_tx_rx_config_ready(&is_ready);
 		if (ret)
 			return ret;
 
-		reg &= TX_RX_CFG_RDY_MASK;
-		if (!reg)
+		if (!is_ready)
 			break;
 
 		usleep_range(1, 5);
@@ -278,12 +268,11 @@ static int ufs_versal2_phy_init(struct ufs_hba *hba)
 	time_left = TIMEOUT_MICROSEC;
 	do {
 		time_left--;
-		ret = zynqmp_pm_sec_read_reg(PM_REGNODE_PMC_IOU_SLCR, SRAM_CSR_OFFSET, &reg);
+		ret = zynqmp_pm_is_sram_init_done(&is_ready);
 		if (ret)
 			return ret;
 
-		reg &= SRAM_CSR_INIT_DONE_MASK;
-		if (reg)
+		if (is_ready)
 			break;
 
 		usleep_range(1, 5);
@@ -335,7 +324,29 @@ static int ufs_versal2_init(struct ufs_hba *hba)
 		return PTR_ERR(host->rstphy);
 	}
 
-	ret = zynqmp_pm_sec_read_reg(PM_REGNODE_EFUSE_CACHE, UFS_CAL_1_OFFSET, &cal);
+	ret = reset_control_assert(host->rstc);
+	if (ret) {
+		dev_err(hba->dev, "host reset assert failed, err = %d\n", ret);
+		return ret;
+	}
+
+	ret = reset_control_assert(host->rstphy);
+	if (ret) {
+		dev_err(hba->dev, "phy reset assert failed, err = %d\n", ret);
+		return ret;
+	}
+
+	ret = zynqmp_pm_set_sram_bypass();
+	if (ret) {
+		dev_err(dev, "Bypass SRAM interface failed, err = %d\n", ret);
+		return ret;
+	}
+
+	ret = reset_control_deassert(host->rstc);
+	if (ret)
+		dev_err(hba->dev, "host reset deassert failed, err = %d\n", ret);
+
+	ret = zynqmp_pm_get_ufs_calibration_values(&cal);
 	if (ret) {
 		dev_err(dev, "failed to read calibration values\n");
 		return ret;
@@ -354,71 +365,15 @@ static int ufs_versal2_init(struct ufs_hba *hba)
 static int ufs_versal2_hce_enable_notify(struct ufs_hba *hba,
 					 enum ufs_notify_change_status status)
 {
-	struct ufs_versal2_host *host = ufshcd_get_variant(hba);
-	struct device *dev = hba->dev;
-	u32 sram_csr;
-	int ret;
+	int ret = 0;
 
-	switch (status) {
-	case PRE_CHANGE:
-		ret = reset_control_assert(host->rstc);
-		if (ret) {
-			dev_err(hba->dev, "ufshc reset assert failed, err = %d\n", ret);
-			return ret;
-		}
-
-		ret = reset_control_assert(host->rstphy);
-		if (ret) {
-			dev_err(hba->dev, "ufsphy reset assert failed, err = %d\n", ret);
-			return ret;
-		}
-
-		ret = zynqmp_pm_sec_read_reg(PM_REGNODE_PMC_IOU_SLCR, SRAM_CSR_OFFSET, &sram_csr);
-		if (ret)
-			return ret;
-
-		if (!host->phy_mode) {
-			sram_csr &= ~SRAM_CSR_EXT_LD_DONE_MASK;
-			sram_csr |= SRAM_CSR_BYPASS_MASK;
-		} else {
-			dev_err(dev, "Invalid phy-mode %d.\n", host->phy_mode);
-			return -EINVAL;
-		}
-
-		ret = zynqmp_pm_sec_mask_write_reg(PM_REGNODE_PMC_IOU_SLCR, SRAM_CSR_OFFSET,
-						   GENMASK(2, 1), sram_csr);
-		if (ret)
-			return ret;
-
-		ret = reset_control_deassert(host->rstc);
-		if (ret)
-			dev_err(hba->dev, "ufshc reset deassert failed, err = %d\n", ret);
-
-		break;
-	case POST_CHANGE:
+	if (status == POST_CHANGE) {
 		ret = ufs_versal2_phy_init(hba);
 		if (ret)
 			dev_err(hba->dev, "Phy init failed (%d)\n", ret);
-
-		break;
-	default:
-		ret = -EINVAL;
-		break;
 	}
 
 	return ret;
-}
-
-static irqreturn_t ufs_versal2_isr(struct ufs_hba *hba, u32 intr_status)
-{
-	u32 mask;
-
-	mask = DWC_UFS_CARD_INSERT_STATUS | DWC_UFS_CARD_REMOVE_STATUS |
-		DWC_UFS_CARD_TOGGLE_STATUS;
-	if (intr_status & mask)
-		return IRQ_HANDLED;
-
-	return IRQ_NONE;
 }
 
 static int ufs_versal2_link_startup_notify(struct ufs_hba *hba,
@@ -488,7 +443,7 @@ static int ufs_versal2_phy_ratesel(struct ufs_hba *hba, u32 activelanes, u32 rx_
 }
 
 static int ufs_versal2_pwr_change_notify(struct ufs_hba *hba, enum ufs_notify_change_status status,
-					 struct ufs_pa_layer_attr *dev_max_params,
+					 const struct ufs_pa_layer_attr *dev_max_params,
 					 struct ufs_pa_layer_attr *dev_req_params)
 {
 	struct ufs_versal2_host *host = ufshcd_get_variant(hba);
@@ -554,7 +509,6 @@ static struct ufs_hba_variant_ops ufs_versal2_hba_vops = {
 	.init			= ufs_versal2_init,
 	.link_startup_notify	= ufs_versal2_link_startup_notify,
 	.hce_enable_notify	= ufs_versal2_hce_enable_notify,
-	.isr			= ufs_versal2_isr,
 	.pwr_change_notify	= ufs_versal2_pwr_change_notify,
 };
 

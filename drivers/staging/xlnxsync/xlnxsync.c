@@ -1319,8 +1319,7 @@ static int xlnxsync_probe(struct platform_device *pdev)
 	if (!xlnxsync)
 		return -ENOMEM;
 
-	xlnxsync->minor = ida_simple_get(&xs_ida, 0, XLNXSYNC_DEV_MAX,
-					 GFP_KERNEL);
+	xlnxsync->minor = ida_alloc_max(&xs_ida, XLNXSYNC_DEV_MAX, GFP_KERNEL);
 	if (xlnxsync->minor < 0)
 		return xlnxsync->minor;
 
@@ -1413,7 +1412,7 @@ clk_err:
 	clk_disable_unprepare(xlnxsync->c_clk);
 	clk_disable_unprepare(xlnxsync->p_clk);
 	clk_disable_unprepare(xlnxsync->axi_clk);
-	ida_simple_remove(&xs_ida, xlnxsync->minor);
+	ida_free(&xs_ida, xlnxsync->minor);
 
 	return ret;
 }
@@ -1429,7 +1428,7 @@ static void xlnxsync_remove(struct platform_device *pdev)
 	clk_disable_unprepare(xlnxsync->c_clk);
 	clk_disable_unprepare(xlnxsync->p_clk);
 	clk_disable_unprepare(xlnxsync->axi_clk);
-	ida_simple_remove(&xs_ida, xlnxsync->minor);
+	ida_free(&xs_ida, xlnxsync->minor);
 }
 
 static const struct of_device_id xlnxsync_of_match[] = {
@@ -1490,4 +1489,4 @@ MODULE_AUTHOR("Vishal Sagar");
 MODULE_DESCRIPTION("Xilinx Synchronizer IP Driver");
 MODULE_LICENSE("GPL");
 MODULE_VERSION(XLNXSYNC_DRIVER_VERSION);
-MODULE_IMPORT_NS(DMA_BUF);
+MODULE_IMPORT_NS("DMA_BUF");

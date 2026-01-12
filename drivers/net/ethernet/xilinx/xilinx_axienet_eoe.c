@@ -261,15 +261,19 @@ int axienet_eoe_recv_gro(struct net_device *ndev, int budget,
 
 		q->rx_data += length;
 
-		if (q->skb) {
+		if (!q->skb)
+			return -ENOMEM;
+
+		else
 			skb_add_rx_frag(q->skb,
 					skb_shinfo(q->skb)->nr_frags,
 					page, 0, length, q->rx_data);
-		}
 
 		if (((cur_p->app0 & XEOE_UDP_GRO_RXSOP_MASK) >> XEOE_UDP_GRO_RXSOP_SHIFT)) {
 			/* Allocate new skb and update in BD */
 			q->skb = netdev_alloc_skb(ndev, length);
+			if (!q->skb)
+				return -ENOMEM;
 			memcpy(q->skb->data, page_addr, length);
 			skb_put(q->skb, length);
 			put_page(page);

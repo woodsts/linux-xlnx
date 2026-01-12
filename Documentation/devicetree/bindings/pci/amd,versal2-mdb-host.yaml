@@ -110,9 +110,9 @@ examples:
                   <0x1000 0x0 0x0 0x1000>,
                   <0x0 0xed860000 0x0 0x2000>;
             reg-names = "slcr", "config", "dbi", "atu";
-            ranges = <0x2000000 0x00 0xa8000000 0x00 0xa8000000 0x00 0x10000000>,
+            ranges = <0x2000000 0x00 0xa0000000 0x00 0xa0000000 0x00 0x10000000>,
                      <0x43000000 0x1100 0x00 0x1100 0x00 0x00 0x1000000>;
-            interrupts = <GIC_SPI 198 IRQ_TYPE_LEVEL_HIGH>;
+            interrupts = <GIC_SPI 165 IRQ_TYPE_LEVEL_HIGH>;
             interrupt-parent = <&gic>;
             interrupt-map-mask = <0 0 0 7>;
             interrupt-map = <0 0 0 1 &pcie_intc_0 0>,
@@ -138,6 +138,6 @@ examples:
                 #address-cells = <0>;
                 #interrupt-cells = <1>;
                 interrupt-controller;
-           };
+            };
         };
     };

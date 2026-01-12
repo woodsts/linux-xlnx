@@ -1,6 +1,6 @@
-// SPDX-License-Identifier: GPL-2.0+
+// SPDX-License-Identifier: GPL-2.0
 /*
- *  Copyright (C) 2011 - 2015 Xilinx
+ *  Copyright (C) 2011 - 2014 Xilinx
  *  Copyright (C) 2012 National Instruments Corp.
  */
 /dts-v1/;
@@ -313,7 +313,7 @@
 	status = "okay";
 	num-cs = <2>;
 	flash@0 {
-		compatible = "n25q128a11", "jedec,spi-nor";
+		compatible = "jedec,spi-nor";
 		reg = <0>, <1>;
 		parallel-memories = /bits/ 64 <0x1000000 0x1000000>; /* 16MB */
 		spi-tx-bus-width = <1>;

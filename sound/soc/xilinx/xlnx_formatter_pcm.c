@@ -483,7 +483,6 @@ static int xlnx_formatter_pcm_hw_params(struct snd_soc_component *component,
 	struct snd_pcm_runtime *runtime = substream->runtime;
 	struct xlnx_pcm_stream_param *stream_data = runtime->private_data;
 	struct xlnx_pcm_drv_data *adata;
-	struct snd_soc_pcm_runtime *rtd = substream->private_data;
 
 	if (!component)
 		return -ENODEV;

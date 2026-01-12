@@ -39,6 +39,9 @@
 #define XLNX_USB_TRAFFIC_ROUTE_CONFIG		0x005C
 #define XLNX_USB_TRAFFIC_ROUTE_FPD		0x1
 
+/* USB 2.0 IP Register */
+#define XLNX_USB2_TRAFFIC_ROUTE_CONFIG		0x0044
+
 #define XLNX_USB_CUR_PWR_STATE			0x0000
 #define XLNX_CUR_PWR_STATE_D0			0x00
 #define XLNX_CUR_PWR_STATE_D3			0x0F
@@ -52,9 +55,6 @@
 #define XLNX_USB_REQ_PWR_STATE			0x003c
 #define XLNX_REQ_PWR_STATE_D0			0x00
 #define XLNX_REQ_PWR_STATE_D3			0x03
-
-/* USB 2.0 IP Register */
-#define XLNX_USB2_TRAFFIC_ROUTE_CONFIG		0x0044
 
 /* Number of retries for USB operations */
 #define DWC3_PWR_STATE_RETRIES			1000
@@ -585,15 +585,13 @@ static int dwc3_xlnx_init_zynqmp(struct dwc3_xlnx *priv_data)
 
 skip_usb3_phy:
 	/* ulpi reset via gpio-modepin or gpio-framework driver */
-	reset_gpio = devm_gpiod_get_optional(dev, "reset", GPIOD_OUT_LOW);
+	reset_gpio = devm_gpiod_get_optional(dev, "reset", GPIOD_OUT_HIGH);
 	if (IS_ERR(reset_gpio)) {
 		return dev_err_probe(dev, PTR_ERR(reset_gpio),
 				     "Failed to request reset GPIO\n");
 	}
 
 	if (reset_gpio) {
-		/* Toggle ulpi to reset the phy. */
-		gpiod_set_value_cansleep(reset_gpio, 1);
 		usleep_range(5000, 10000);
 		gpiod_set_value_cansleep(reset_gpio, 0);
 		usleep_range(5000, 10000);
@@ -959,7 +957,7 @@ static const struct dev_pm_ops dwc3_xlnx_dev_pm_ops = {
 
 static struct platform_driver dwc3_xlnx_driver = {
 	.probe		= dwc3_xlnx_probe,
-	.remove_new	= dwc3_xlnx_remove,
+	.remove		= dwc3_xlnx_remove,
 	.driver		= {
 		.name		= "dwc3-xilinx",
 		.of_match_table	= dwc3_xlnx_of_match,

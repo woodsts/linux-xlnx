@@ -30,4 +30,17 @@ unsigned int xlnx_get_align(struct drm_device *drm);
 struct xlnx_crtc_helper *xlnx_get_crtc_helper(struct drm_device *drm);
 struct xlnx_bridge_helper *xlnx_get_bridge_helper(struct drm_device *drm);
 
+#if defined(CONFIG_DRM_FBDEV_EMULATION)
+struct drm_fb_helper;
+struct drm_fb_helper_surface_size;
+
+int xlnx_fbdev_probe(struct drm_fb_helper *fb_helper,
+		     struct drm_fb_helper_surface_size *size);
+#define XLNX_DRM_FBDEV_DRIVER_OPS \
+       .fbdev_probe = xlnx_fbdev_probe
+#else
+#define XLNX_DRM_FBDEV_DRIVER_OPS \
+       .fbdev_probe = NULL
+#endif
+
 #endif /* _XLNX_DRV_H_ */

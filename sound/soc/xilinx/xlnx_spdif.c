@@ -286,7 +286,7 @@ static int xlnx_spdif_probe(struct platform_device *pdev)
 		}
 		dai_drv = &xlnx_spdif_tx_dai;
 	} else {
-		ctx->axis_clk = devm_clk_get(dev, "m_axis_aclk");
+		ctx->axis_clk = devm_clk_get_enabled(dev, "m_axis_aclk");
 		if (IS_ERR(ctx->axis_clk)) {
 			ret = PTR_ERR(ctx->axis_clk);
 			dev_err(dev, "failed to get m_axis_aclk(%d)\n", ret);

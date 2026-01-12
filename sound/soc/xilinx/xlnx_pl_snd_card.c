@@ -285,7 +285,7 @@ static struct snd_soc_dai_link xlnx_snd_dai[][XLNX_MAX_PATHS] = {
 			.ops = &xlnx_hdmi_card_ops,
 			.dai_fmt = SND_SOC_DAIFMT_I2S |
 				   SND_SOC_DAIFMT_NB_NF |
-				   SND_SOC_DAIFMT_CBS_CFS,
+				   SND_SOC_DAIFMT_CBC_CFC,
 		},
 		{
 			.name = "xilinx-hdmi-capture",
@@ -322,7 +322,7 @@ static struct snd_soc_dai_link xlnx_snd_dai[][XLNX_MAX_PATHS] = {
 			.ops = &xlnx_dp_card_ops,
 			.dai_fmt = SND_SOC_DAIFMT_I2S |
 				   SND_SOC_DAIFMT_NB_NF |
-				   SND_SOC_DAIFMT_CBS_CFS,
+				   SND_SOC_DAIFMT_CBC_CFC,
 		},
 		{
 			.name = "xilinx-dp-capture",
@@ -497,9 +497,9 @@ static int xlnx_snd_probe(struct platform_device *pdev)
 		if (!buf)
 			return -ENOMEM;
 
-		prv->xlnx_snd_dev_id = ida_simple_get(&xlnx_snd_card_dev, 0,
-						      XLNX_MAX_PL_SND_DEV,
-						      GFP_KERNEL);
+		prv->xlnx_snd_dev_id = ida_alloc_max(&xlnx_snd_card_dev,
+						     XLNX_MAX_PL_SND_DEV,
+						     GFP_KERNEL);
 		if (prv->xlnx_snd_dev_id < 0)
 			return prv->xlnx_snd_dev_id;
 
@@ -511,7 +511,7 @@ static int xlnx_snd_probe(struct platform_device *pdev)
 		if (ret) {
 			dev_err(card->dev, "%s registration failed\n",
 				card->name);
-			ida_simple_remove(&xlnx_snd_card_dev,
+			ida_free(&xlnx_snd_card_dev,
 					  prv->xlnx_snd_dev_id);
 			return ret;
 		}
@@ -527,7 +527,7 @@ static void xlnx_snd_remove(struct platform_device *pdev)
 {
 	struct pl_card_data *pdata = dev_get_drvdata(&pdev->dev);
 
-	ida_simple_remove(&xlnx_snd_card_dev, pdata->xlnx_snd_dev_id);
+	ida_free(&xlnx_snd_card_dev, pdata->xlnx_snd_dev_id);
 }
 
 static struct platform_driver xlnx_snd_driver = {

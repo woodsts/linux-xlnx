@@ -1,13 +1,10 @@
 # SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
-# %YAML 1.2
+%YAML 1.2
 ---
 $id: http://devicetree.org/schemas/sound/xlnx,i2s.yaml#
 $schema: http://devicetree.org/meta-schemas/core.yaml#
 
 title: Xilinx I2S Playback/Capture audio system
-
-maintainers:
-  - Katta Dhanunjanrao <katta.dhanunjanrao@amd.com>
 
 description:
   IP I2S Transmitter and receiver cores are soft IP cores in AMD Vivado
@@ -15,12 +12,16 @@ description:
   interface used to connect audio devices for transmitting and
   receiving PCM audio.
 
+maintainers:
+  - Vincenzo Frascino <vincenzo.frascino@arm.com>
+  - Katta Dhanunjanrao <katta.dhanunjanrao@amd.com>
+
 properties:
   compatible:
-    items:
-      - enum:
-          - xlnx,i2s-transmitter-1.0
-          - xlnx,i2s-receiver-1.0
+    enum:
+      - xlnx,i2s-receiver-1.0
+      - xlnx,i2s-transmitter-1.0
+
   reg:
     maxItems: 1
 
@@ -38,25 +39,31 @@ properties:
     maxItems: 1
 
   xlnx,dwidth:
-    description: Indicates the I2S data width of the core.
     $ref: /schemas/types.yaml#/definitions/uint32
-    enum: [16, 24]
+    enum:
+      - 16
+      - 24
+    description: |
+      Indicates the I2S data width of the core.
 
   xlnx,num-channels:
-    description: Indicates the number of audio channels supported.
-                 supported channels = 2 * xlnx,num-channels.
     $ref: /schemas/types.yaml#/definitions/uint32
-    enum: [1, 2, 3, 4]
+    minimum: 1
+    maximum: 4
+    description: |
+      Indicates the number of audio channels supported.
+      supported channels = 2 * xlnx,num-channels.
 
   xlnx,snd-pcm:
-    description: Reference to audio formatter block.
     $ref: /schemas/types.yaml#/definitions/phandle
+    description: Reference to audio formatter block.
 
   xlnx,32bit-lr:
     type: boolean
     description: Core configuration either master or slave.
 
 required:
+  - compatible
   - reg
   - clocks
   - clock-names
@@ -67,6 +74,8 @@ required:
 additionalProperties: false
 
 allOf:
+  - $ref: dai-common.yaml#
+
   - if:
       properties:
         compatible:
@@ -94,22 +103,22 @@ allOf:
 
 examples:
   - |
-   i2s-transmitter@a00d0000 {
-     compatible = "xlnx,i2s-transmitter-1.0";
-     reg = <0xa00d0000 0x10000>;
-     clocks = <&audio_ss_0_clk_wiz_0 0>, <&zynqmp_clk 71>, <&audio_ss_0_clk_wiz_0 0>;
-     clock-names = "aud_mclk" , "s_axi_ctrl_aclk" , "s_axis_aud_aclk";
-     xlnx,dwidth = <0x18>;
-     xlnx,num-channels = <0x1>;
-     xlnx,snd-pcm = <&audio_ss_0_audio_formatter_2>;
-   };
-   i2s-receiver@a00c0000 {
-     compatible = "xlnx,i2s-receiver-1.0";
-     reg = <0xa00d0000 0x10000>;
-     clocks = <&audio_ss_0_clk_wiz_0 0>, <&zynqmp_clk 71>, <&audio_ss_0_clk_wiz_0 0>;
-     clock-names = "aud_mclk" , "s_axi_ctrl_aclk", "m_axis_aud_aclk";
-     xlnx,dwidth = <0x18>;
-     xlnx,num-channels = <0x1>;
-     xlnx,snd-pcm = <&audio_ss_0_audio_formatter_2>;
-   };
+    i2s@a0080000 {
+      compatible = "xlnx,i2s-receiver-1.0";
+      reg = <0xa0080000 0x10000>;
+      clocks = <&audio_ss_0_clk_wiz_0 0>, <&zynqmp_clk 71>, <&audio_ss_0_clk_wiz_0 0>;
+      clock-names = "aud_mclk" , "s_axi_ctrl_aclk", "m_axis_aud_aclk";
+      xlnx,dwidth = <0x18>;
+      xlnx,num-channels = <1>;
+      xlnx,snd-pcm = <&audio_ss_0_audio_formatter_2>;
+    };
+    i2s@a0090000 {
+      compatible = "xlnx,i2s-transmitter-1.0";
+      reg = <0xa0090000 0x10000>;
+      clocks = <&audio_ss_0_clk_wiz_0 0>, <&zynqmp_clk 71>, <&audio_ss_0_clk_wiz_0 0>;
+      clock-names = "aud_mclk" , "s_axi_ctrl_aclk" , "s_axis_aud_aclk";
+      xlnx,dwidth = <0x18>;
+      xlnx,num-channels = <1>;
+      xlnx,snd-pcm = <&audio_ss_0_audio_formatter_2>;
+    };
 ...

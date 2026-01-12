@@ -208,10 +208,6 @@ static const struct mmi_dc_format video_plane_formats[] = {
 		.csc_scaling_factors	= csc_scaling_factors_121212,
 	},
 	{
-/*
- * TODO: Keep only Y10 or R10 when Yxx formats are accepted or rejected into the
- * upstream kernel.
- */
 #ifdef DRM_FORMAT_Y10
 		.drm_format		= DRM_FORMAT_Y10,
 #else
@@ -224,10 +220,6 @@ static const struct mmi_dc_format video_plane_formats[] = {
 		.csc_scaling_factors	= csc_scaling_factors_101010,
 	},
 	{
-/*
- * TODO: Keep only Y12 or R12 as soon as Yxx formats are accepted or rejected
- * into the upstream kernel.
- */
 #ifdef DRM_FORMAT_Y12
 		.drm_format		= DRM_FORMAT_Y12,
 #else

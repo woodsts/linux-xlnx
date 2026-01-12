@@ -3,7 +3,7 @@
  * Xilinx Zynq MPSoC Firmware layer
  *
  *  Copyright (C) 2014-2022 Xilinx, Inc.
- *  Copyright (C) 2022 - 2025, Advanced Micro Devices, Inc.
+ *  Copyright (C) 2022 - 2025 Advanced Micro Devices, Inc.
  *
  *  Michal Simek <michal.simek@amd.com>
  *  Davorin Mista <davorin.mista@aggios.com>
@@ -14,8 +14,6 @@
 #include <linux/arm-smccc.h>
 #include <linux/compiler.h>
 #include <linux/device.h>
-#include <linux/dma-mapping.h>
-#include <linux/firmware.h>
 #include <linux/init.h>
 #include <linux/mfd/core.h>
 #include <linux/module.h>
@@ -702,12 +700,11 @@ EXPORT_SYMBOL_GPL(zynqmp_pm_pinctrl_get_config);
 int zynqmp_pm_pinctrl_set_config(const u32 pin, const u32 param,
 				 u32 value)
 {
-	u32 pm_family_code;
 	int ret;
+	u32 pm_family_code;
 
-	/* Get the Family code of platform */
 	ret = zynqmp_pm_get_family_info(&pm_family_code);
-	if (ret < 0)
+	if (ret)
 		return ret;
 
 	if (pm_family_code == PM_ZYNQMP_FAMILY_CODE &&
@@ -787,7 +784,6 @@ int zynqmp_pm_init_finalize(void)
 {
 	return zynqmp_pm_invoke_fn(PM_PM_INIT_FINALIZE, NULL, 0);
 }
-EXPORT_SYMBOL_GPL(zynqmp_pm_init_finalize);
 
 /**
  * zynqmp_pm_config_reg_access - PM Config API for Config register access
@@ -1715,7 +1711,6 @@ int zynqmp_firmware_pm_sysfs_entry(struct platform_device *pdev)
 		       __func__, ret);
 		return ret;
 	}
-
 
 	ret = sysfs_create_files(&pdev->dev.kobj, zynqmp_firmware_attrs);
 	if (ret) {

@@ -649,7 +649,7 @@ static int xilinx_spi_probe(struct platform_device *pdev)
 
 	startup_block = of_property_read_bool(pdev->dev.of_node,
 					      "xlnx,startup-block");
-	ctlr = spi_alloc_master(&pdev->dev, sizeof(struct xilinx_spi));
+	ctlr = spi_alloc_host(&pdev->dev, sizeof(struct xilinx_spi));
 	if (!ctlr)
 		return -ENODEV;
 
@@ -842,7 +842,7 @@ MODULE_DEVICE_TABLE(of, xilinx_spi_of_match);
 
 static struct platform_driver xilinx_spi_driver = {
 	.probe = xilinx_spi_probe,
-	.remove_new = xilinx_spi_remove,
+	.remove = xilinx_spi_remove,
 	.driver = {
 		.name = XILINX_SPI_NAME,
 		.of_match_table = xilinx_spi_of_match,

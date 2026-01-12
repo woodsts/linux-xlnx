@@ -1146,7 +1146,6 @@ static int xvip_m2m_open(struct file *file)
 		return -ENOMEM;
 
 	v4l2_fh_init(&ctx->fh, video_devdata(file));
-	file->private_data = &ctx->fh;
 	ctx->xdev = xdev;
 
 	ctx->fh.m2m_ctx = v4l2_m2m_ctx_init(xdev->m2m_dev, ctx,
@@ -1157,7 +1156,7 @@ static int xvip_m2m_open(struct file *file)
 		return ret;
 	}
 
-	v4l2_fh_add(&ctx->fh);
+	v4l2_fh_add(&ctx->fh, file);
 	dev_info(xdev->dev, "Created instance %p, m2m_ctx: %p\n", ctx,
 		 ctx->fh.m2m_ctx);
 	return 0;

@@ -113,9 +113,6 @@ static int spi_nor_issi_octal_dtr_enable(struct spi_nor *nor, bool enable)
 	if (ret)
 		return ret;
 
-	if ((nor->flags & SNOR_F_HAS_STACKED) && nor->spimem->spi->cs_index_mask == 1)
-		return 0;
-
 	/* Read flash ID to make sure the switch was successful. */
 	op = (struct spi_mem_op)
 		SPI_MEM_OP(SPI_MEM_OP_CMD(SPINOR_OP_RDID, 1),
@@ -154,7 +151,7 @@ static int is25wx256_set_4byte_addr_mode(struct spi_nor *nor, bool enable)
 
 static void is25wx256_default_init(struct spi_nor *nor)
 {
-	struct spi_nor_flash_parameter *params = spi_nor_get_params(nor, 0);
+	struct spi_nor_flash_parameter *params = nor->params;
 
 	params->set_octal_dtr = spi_nor_issi_octal_dtr_enable;
 	params->set_4byte_addr_mode = is25wx256_set_4byte_addr_mode;
@@ -163,7 +160,7 @@ static void is25wx256_default_init(struct spi_nor *nor)
 
 static int is25wx256_post_sfdp_fixup(struct spi_nor *nor)
 {
-	struct spi_nor_flash_parameter *params = spi_nor_get_params(nor, 0);
+	struct spi_nor_flash_parameter *params = nor->params;
 
 	/* Set the Fast Read settings. */
 	params->hwcaps.mask |= SNOR_HWCAPS_READ_8_8_8_DTR;
@@ -195,8 +192,6 @@ is25lp256_post_bfpt_fixups(struct spi_nor *nor,
 			   const struct sfdp_parameter_header *bfpt_header,
 			   const struct sfdp_bfpt *bfpt)
 {
-	struct spi_nor_flash_parameter *params = spi_nor_get_params(nor, 0);
-
 	/*
 	 * IS25LP256 supports 4B opcodes, but the BFPT advertises
 	 * BFPT_DWORD1_ADDRESS_BYTES_3_ONLY.
@@ -204,7 +199,7 @@ is25lp256_post_bfpt_fixups(struct spi_nor *nor,
 	 */
 	if ((bfpt->dwords[SFDP_DWORD(1)] & BFPT_DWORD1_ADDRESS_BYTES_MASK) ==
 		BFPT_DWORD1_ADDRESS_BYTES_3_ONLY)
-		params->addr_nbytes = 4;
+		nor->params->addr_nbytes = 4;
 
 	return 0;
 }
@@ -215,8 +210,7 @@ static const struct spi_nor_fixups is25lp256_fixups = {
 
 static int pm25lv_nor_late_init(struct spi_nor *nor)
 {
-	struct spi_nor_flash_parameter *params = spi_nor_get_params(nor, 0);
-	struct spi_nor_erase_map *map = &params->erase_map;
+	struct spi_nor_erase_map *map = &nor->params->erase_map;
 	int i;
 
 	/* The PM25LV series has a different 4k sector erase opcode */
@@ -402,7 +396,7 @@ static const struct flash_info issi_nor_parts[] = {
 
 static void issi_nor_default_init(struct spi_nor *nor)
 {
-	struct spi_nor_flash_parameter *params = spi_nor_get_params(nor, 0);
+	struct spi_nor_flash_parameter *params = nor->params;
 
 	nor->flags &= ~SNOR_F_HAS_16BIT_SR;
 	params->quad_enable = spi_nor_sr1_bit6_quad_enable;

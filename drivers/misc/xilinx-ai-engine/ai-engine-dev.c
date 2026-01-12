@@ -442,8 +442,8 @@ static void xilinx_ai_engine_release_device(struct device *dev)
 {
 	struct aie_device *adev = dev_to_aiedev(dev);
 
-	ida_simple_remove(&aie_device_ida, dev->id);
-	ida_simple_remove(&aie_minor_ida, MINOR(dev->devt));
+	ida_free(&aie_device_ida, dev->id);
+	ida_free(&aie_minor_ida, MINOR(dev->devt));
 	cdev_del(&adev->cdev);
 }
 
@@ -510,13 +510,13 @@ int xilinx_ai_engine_add_dev(struct aie_device *adev,
 	dev->parent = &pdev->dev;
 	dev->of_node = pdev->dev.of_node;
 
-	ret = ida_simple_get(&aie_minor_ida, 0, AIE_DEV_MAX, GFP_KERNEL);
+	ret = ida_alloc_max(&aie_minor_ida, AIE_DEV_MAX, GFP_KERNEL);
 	if (ret < 0)
 		return ret;
 	dev->devt = MKDEV(MAJOR(aie_major), ret);
-	ret = ida_simple_get(&aie_device_ida, 0, 0, GFP_KERNEL);
+	ret = ida_alloc(&aie_device_ida, GFP_KERNEL);
 	if (ret < 0) {
-		ida_simple_remove(&aie_minor_ida, MINOR(dev->devt));
+		ida_free(&aie_minor_ida, MINOR(dev->devt));
 		return ret;
 	}
 	dev->id = ret;
@@ -526,8 +526,8 @@ int xilinx_ai_engine_add_dev(struct aie_device *adev,
 	adev->cdev.owner = THIS_MODULE;
 	ret = cdev_add(&adev->cdev, dev->devt, 1);
 	if (ret) {
-		ida_simple_remove(&aie_device_ida, dev->id);
-		ida_simple_remove(&aie_minor_ida, MINOR(dev->devt));
+		ida_free(&aie_device_ida, dev->id);
+		ida_free(&aie_minor_ida, MINOR(dev->devt));
 		return ret;
 	}
 	/* We can now rely on the release function for cleanup */
@@ -997,4 +997,4 @@ module_exit(xilinx_ai_engine_exit);
 
 MODULE_AUTHOR("Xilinx, Inc.");
 MODULE_LICENSE("GPL");
-MODULE_IMPORT_NS(DMA_BUF);
+MODULE_IMPORT_NS("DMA_BUF");

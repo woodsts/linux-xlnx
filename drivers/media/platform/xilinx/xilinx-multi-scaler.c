@@ -2080,8 +2080,7 @@ static int xm2msc_open(struct file *file)
 	}
 
 	v4l2_fh_init(&chan_ctx->fh, &chan_ctx->vfd);
-	file->private_data = &chan_ctx->fh;
-	v4l2_fh_add(&chan_ctx->fh);
+	v4l2_fh_add(&chan_ctx->fh, file);
 
 	chan_ctx->m2m_ctx = v4l2_m2m_ctx_init(chan_ctx->m2m_dev,
 					      chan_ctx, &queue_init);
@@ -2108,7 +2107,7 @@ static int xm2msc_open(struct file *file)
 	return 0;
 
 error_m2m:
-	v4l2_fh_del(&chan_ctx->fh);
+	v4l2_fh_del(&chan_ctx->fh, file);
 	v4l2_fh_exit(&chan_ctx->fh);
 unlock:
 	mutex_unlock(&xm2msc->dev_mutex);
@@ -2126,7 +2125,7 @@ static int xm2msc_release(struct file *file)
 		return -ERESTARTSYS;
 
 	v4l2_m2m_ctx_release(chan_ctx->m2m_ctx);
-	v4l2_fh_del(&chan_ctx->fh);
+	v4l2_fh_del(&chan_ctx->fh, file);
 	v4l2_fh_exit(&chan_ctx->fh);
 	chan_ctx->status &= ~CHAN_OPENED;
 	xm2msc_set_chan(chan_ctx, false);

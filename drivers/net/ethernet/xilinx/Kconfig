@@ -28,6 +28,7 @@ config XILINX_AXI_EMAC
 	depends on HAS_IOMEM
 	depends on XILINX_DMA
 	select PHYLINK
+	select DIMLIB
 	help
 	  This driver supports the 10/100/1000 Ethernet from Xilinx for the
 	  AXI bus interface used in Xilinx Virtex FPGAs and Soc's.
@@ -42,7 +43,8 @@ config  AXIENET_HAS_MCDMA
 	bool "AXI Ethernet is configured with MCDMA"
 	depends on XILINX_AXI_EMAC
 	help
-	  When hardware is generated with AXI Ethernet with MCDMA select this option.
+	  When hardware is generated with AXI Ethernet with MCDMA select this
+	  option.
 
 config XILINX_AXI_EOE
 	bool "Xilinx Ethernet Offload Engine support"

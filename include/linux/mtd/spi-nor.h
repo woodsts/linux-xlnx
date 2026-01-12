@@ -128,6 +128,12 @@
 /* Enhanced Volatile Configuration Register bits */
 #define EVCR_QUAD_EN_MICRON	BIT(7)	/* Micron Quad I/O */
 
+/*
+ * Maximum number of flashes that can be connected
+ * in parallel configuration
+ */
+#define	SNOR_FLASH_CNT_MAX	4
+
 /* Extended/Bank Address Register bits */
 #define	EAR_SEGMENT_MASK	0x7	/* 128 Mb segment mask */
 
@@ -137,12 +143,6 @@
 #define SR2_LB2			BIT(4)	/* Security Register Lock Bit 2 */
 #define SR2_LB3			BIT(5)	/* Security Register Lock Bit 3 */
 #define SR2_QUAD_EN_BIT7	BIT(7)
-
-/*
- * Maximum number of flashes that can be connected
- * in stacked/parallel configuration
- */
-#define	SNOR_FLASH_CNT_MAX	4
 
 /* Supported SPI protocols */
 #define SNOR_PROTO_INST_MASK	GENMASK(23, 16)
@@ -396,7 +396,7 @@ struct spi_nor_flash_parameter;
  *                      settings that can be overwritten by the spi_nor_fixups
  *                      hooks, or dynamically when parsing the SFDP tables.
  * @dirmap:		pointers to struct spi_mem_dirmap_desc for reads/writes.
- * @num_flash		number of flashes connected in parallel or stacked mode
+ * @num_flash		number of flashes connected in parallel mode.
  * @reset		gpio descriptor for device reset.
  * @priv:		pointer to the private data
  */
@@ -434,7 +434,7 @@ struct spi_nor {
 
 	const struct spi_nor_controller_ops *controller_ops;
 
-	struct spi_nor_flash_parameter *params[SNOR_FLASH_CNT_MAX];
+	struct spi_nor_flash_parameter *params;
 
 	struct {
 		struct spi_mem_dirmap_desc *rdesc;
@@ -456,16 +456,6 @@ static inline struct device_node *spi_nor_get_flash_node(struct spi_nor *nor)
 	return mtd_get_of_node(&nor->mtd);
 }
 
-static inline struct spi_nor_flash_parameter *spi_nor_get_params(const struct spi_nor *nor, u8 idx)
-{
-	return nor->params[idx];
-}
-
-static inline void spi_nor_set_params(struct spi_nor *nor, u8 idx,
-				      struct spi_nor_flash_parameter *params)
-{
-	nor->params[idx] = params;
-}
 /**
  * spi_nor_scan() - scan the SPI NOR
  * @nor:	the spi_nor structure

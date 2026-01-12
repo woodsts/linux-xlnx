@@ -114,9 +114,6 @@ static int spi_nor_gigadevice_octal_dtr_enable(struct spi_nor *nor, bool enable)
 	if (ret)
 		return ret;
 
-	if ((nor->flags & SNOR_F_HAS_STACKED) && nor->spimem->spi->cs_index_mask == 1)
-		return 0;
-
 	/* Read flash ID to make sure the switch was successful. */
 	op = (struct spi_mem_op)
 		SPI_MEM_OP(SPI_MEM_OP_CMD(SPINOR_OP_RDID, 1),
@@ -155,7 +152,7 @@ static int gd25lx256e_set_4byte_addr_mode(struct spi_nor *nor, bool enable)
 
 static void gd25lx256e_default_init(struct spi_nor *nor)
 {
-	struct spi_nor_flash_parameter *params = spi_nor_get_params(nor, 0);
+	struct spi_nor_flash_parameter *params = nor->params;
 
 	nor->flags &= ~SNOR_F_HAS_16BIT_SR;
 	params->set_octal_dtr = spi_nor_gigadevice_octal_dtr_enable;
@@ -165,7 +162,7 @@ static void gd25lx256e_default_init(struct spi_nor *nor)
 
 static int gd25lx256e_post_sfdp_fixup(struct spi_nor *nor)
 {
-	struct spi_nor_flash_parameter *params = spi_nor_get_params(nor, 0);
+	struct spi_nor_flash_parameter *params = nor->params;
 
 	/* Set the Fast Read settings. */
 	params->hwcaps.mask |= SNOR_HWCAPS_READ_8_8_8_DTR;
@@ -190,7 +187,7 @@ static int gd25lx256e_post_sfdp_fixup(struct spi_nor *nor)
 
 static void gd25lx512_default_init(struct spi_nor *nor)
 {
-	struct spi_nor_flash_parameter *params = spi_nor_get_params(nor, 0);
+	struct spi_nor_flash_parameter *params = nor->params;
 
 	nor->flags &= ~SNOR_F_HAS_16BIT_SR;
 	params->set_octal_dtr = spi_nor_gigadevice_octal_dtr_enable;
@@ -199,7 +196,7 @@ static void gd25lx512_default_init(struct spi_nor *nor)
 
 static void gd25b512_default_init(struct spi_nor *nor)
 {
-	struct spi_nor_flash_parameter *params = spi_nor_get_params(nor, 0);
+	struct spi_nor_flash_parameter *params = nor->params;
 
 	nor->flags &= ~SNOR_F_HAS_16BIT_SR;
 	params->set_4byte_addr_mode = gd25lx256e_set_4byte_addr_mode;
@@ -224,8 +221,6 @@ gd25q256_post_bfpt(struct spi_nor *nor,
 		   const struct sfdp_parameter_header *bfpt_header,
 		   const struct sfdp_bfpt *bfpt)
 {
-	struct spi_nor_flash_parameter *params = spi_nor_get_params(nor, 0);
-
 	/*
 	 * GD25Q256C supports the first version of JESD216 which does not define
 	 * the Quad Enable methods. Overwrite the default Quad Enable method.
@@ -237,7 +232,7 @@ gd25q256_post_bfpt(struct spi_nor *nor,
 	 */
 	if (bfpt_header->major == SFDP_JESD216_MAJOR &&
 	    bfpt_header->minor == SFDP_JESD216_MINOR)
-		params->quad_enable = spi_nor_sr1_bit6_quad_enable;
+		nor->params->quad_enable = spi_nor_sr1_bit6_quad_enable;
 
 	return 0;
 }

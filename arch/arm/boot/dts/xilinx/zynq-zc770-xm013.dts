@@ -62,7 +62,7 @@
 	status = "okay";
 	num-cs = <2>;
 	flash@0 {
-		compatible = "n25q128a11", "jedec,spi-nor";
+		compatible = "jedec,spi-nor";
 		reg = <0>, <1>;
 		parallel-memories = /bits/ 64 <0x1000000 0x1000000>; /* 16MB */
 		spi-tx-bus-width = <1>;

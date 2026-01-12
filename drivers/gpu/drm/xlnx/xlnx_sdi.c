@@ -772,7 +772,7 @@ static int xlnx_sdi_get_modes(struct drm_connector *connector)
 }
 
 static int xlnx_sdi_mode_valid(struct drm_connector *connector,
-			       struct drm_display_mode *mode)
+			       const struct drm_display_mode *mode)
 {
 	/* Basic sanity checks */
 	if (mode->hdisplay <= 0 || mode->vdisplay <= 0)
@@ -919,7 +919,7 @@ static int xlnx_sdi_create_connector(struct drm_encoder *encoder)
 	xlnx_sdi_drm_connector_attach_property(connector);
 
 	/* Fill out the supported EOTFs */
-	connector->hdr_sink_metadata.hdmi_type1.eotf |=
+	connector->display_info.hdr_sink_metadata.hdmi_type1.eotf |=
 		BIT(V4L2_EOTF_BT_2100_HLG) |
 		BIT(V4L2_EOTF_TRADITIONAL_GAMMA_SDR) |
 		BIT(V4L2_EOTF_SMPTE_ST2084);

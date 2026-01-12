@@ -2375,7 +2375,7 @@ The following table list existing packed 48bit wide RGB formats.
     \endgroup
 
 On LVDS buses, usually each sample is transferred serialized in seven
-time slots per pixel clock, on three (18-bit) or four (24-bit)
+time slots per pixel clock, on three (18-bit) or four (24-bit) or five (30-bit)
 differential data pairs at the same time. The remaining bits are used
 for control signals as defined by SPWG/PSWG/VESA or JEIDA standards. The
 24-bit RGB format serialized in seven time slots on four lanes using
@@ -2396,11 +2396,12 @@ JEIDA defined bit mapping will be named
       - Code
       -
       -
-      - :cspan:`3` Data organization
+      - :cspan:`4` Data organization
     * -
       -
       - Timeslot
       - Lane
+      - 4
       - 3
       - 2
       - 1
@@ -2412,12 +2413,14 @@ JEIDA defined bit mapping will be named
       - 0
       -
       -
+      -
       - d
       - b\ :sub:`1`
       - g\ :sub:`0`
     * -
       -
       - 1
+      -
       -
       -
       - d
@@ -2428,12 +2431,14 @@ JEIDA defined bit mapping will be named
       - 2
       -
       -
+      -
       - d
       - g\ :sub:`5`
       - r\ :sub:`4`
     * -
       -
       - 3
+      -
       -
       -
       - b\ :sub:`5`
@@ -2444,6 +2449,7 @@ JEIDA defined bit mapping will be named
       - 4
       -
       -
+      -
       - b\ :sub:`4`
       - g\ :sub:`3`
       - r\ :sub:`2`
@@ -2452,12 +2458,14 @@ JEIDA defined bit mapping will be named
       - 5
       -
       -
+      -
       - b\ :sub:`3`
       - g\ :sub:`2`
       - r\ :sub:`1`
     * -
       -
       - 6
+      -
       -
       -
       - b\ :sub:`2`
@@ -2469,6 +2477,7 @@ JEIDA defined bit mapping will be named
       - 0x1011
       - 0
       -
+      -
       - d
       - d
       - b\ :sub:`1`
@@ -2476,6 +2485,7 @@ JEIDA defined bit mapping will be named
     * -
       -
       - 1
+      -
       -
       - b\ :sub:`7`
       - d
@@ -2485,6 +2495,7 @@ JEIDA defined bit mapping will be named
       -
       - 2
       -
+      -
       - b\ :sub:`6`
       - d
       - g\ :sub:`5`
@@ -2492,6 +2503,7 @@ JEIDA defined bit mapping will be named
     * -
       -
       - 3
+      -
       -
       - g\ :sub:`7`
       - b\ :sub:`5`
@@ -2501,6 +2513,7 @@ JEIDA defined bit mapping will be named
       -
       - 4
       -
+      -
       - g\ :sub:`6`
       - b\ :sub:`4`
       - g\ :sub:`3`
@@ -2509,6 +2522,7 @@ JEIDA defined bit mapping will be named
       -
       - 5
       -
+      -
       - r\ :sub:`7`
       - b\ :sub:`3`
       - g\ :sub:`2`
@@ -2516,6 +2530,7 @@ JEIDA defined bit mapping will be named
     * -
       -
       - 6
+      -
       -
       - r\ :sub:`6`
       - b\ :sub:`2`
@@ -2527,6 +2542,7 @@ JEIDA defined bit mapping will be named
       - 0x1012
       - 0
       -
+      -
       - d
       - d
       - b\ :sub:`3`
@@ -2534,6 +2550,7 @@ JEIDA defined bit mapping will be named
     * -
       -
       - 1
+      -
       -
       - b\ :sub:`1`
       - d
@@ -2543,6 +2560,7 @@ JEIDA defined bit mapping will be named
       -
       - 2
       -
+      -
       - b\ :sub:`0`
       - d
       - g\ :sub:`7`
@@ -2550,6 +2568,7 @@ JEIDA defined bit mapping will be named
     * -
       -
       - 3
+      -
       -
       - g\ :sub:`1`
       - b\ :sub:`7`
@@ -2559,6 +2578,7 @@ JEIDA defined bit mapping will be named
       -
       - 4
       -
+      -
       - g\ :sub:`0`
       - b\ :sub:`6`
       - g\ :sub:`5`
@@ -2566,6 +2586,7 @@ JEIDA defined bit mapping will be named
     * -
       -
       - 5
+      -
       -
       - r\ :sub:`1`
       - b\ :sub:`5`
@@ -2575,10 +2596,141 @@ JEIDA defined bit mapping will be named
       -
       - 6
       -
+      -
       - r\ :sub:`0`
       - b\ :sub:`4`
       - g\ :sub:`3`
       - r\ :sub:`2`
+    * .. _MEDIA-BUS-FMT-RGB101010-1X7X5-SPWG:
+
+      - MEDIA_BUS_FMT_RGB101010_1X7X5_SPWG
+      - 0x1026
+      - 0
+      -
+      - d
+      - d
+      - d
+      - b\ :sub:`1`
+      - g\ :sub:`0`
+    * -
+      -
+      - 1
+      -
+      - b\ :sub:`9`
+      - b\ :sub:`7`
+      - d
+      - b\ :sub:`0`
+      - r\ :sub:`5`
+    * -
+      -
+      - 2
+      -
+      - b\ :sub:`8`
+      - b\ :sub:`6`
+      - d
+      - g\ :sub:`5`
+      - r\ :sub:`4`
+    * -
+      -
+      - 3
+      -
+      - g\ :sub:`9`
+      - g\ :sub:`7`
+      - b\ :sub:`5`
+      - g\ :sub:`4`
+      - r\ :sub:`3`
+    * -
+      -
+      - 4
+      -
+      - g\ :sub:`8`
+      - g\ :sub:`6`
+      - b\ :sub:`4`
+      - g\ :sub:`3`
+      - r\ :sub:`2`
+    * -
+      -
+      - 5
+      -
+      - r\ :sub:`9`
+      - r\ :sub:`7`
+      - b\ :sub:`3`
+      - g\ :sub:`2`
+      - r\ :sub:`1`
+    * -
+      -
+      - 6
+      -
+      - r\ :sub:`8`
+      - r\ :sub:`6`
+      - b\ :sub:`2`
+      - g\ :sub:`1`
+      - r\ :sub:`0`
+    * .. _MEDIA-BUS-FMT-RGB101010-1X7X5-JEIDA:
+
+      - MEDIA_BUS_FMT_RGB101010_1X7X5_JEIDA
+      - 0x1027
+      - 0
+      -
+      - d
+      - d
+      - d
+      - b\ :sub:`5`
+      - g\ :sub:`4`
+    * -
+      -
+      - 1
+      -
+      - b\ :sub:`1`
+      - b\ :sub:`3`
+      - d
+      - b\ :sub:`4`
+      - r\ :sub:`9`
+    * -
+      -
+      - 2
+      -
+      - b\ :sub:`0`
+      - b\ :sub:`2`
+      - d
+      - g\ :sub:`9`
+      - r\ :sub:`8`
+    * -
+      -
+      - 3
+      -
+      - g\ :sub:`1`
+      - g\ :sub:`3`
+      - b\ :sub:`9`
+      - g\ :sub:`8`
+      - r\ :sub:`7`
+    * -
+      -
+      - 4
+      -
+      - g\ :sub:`0`
+      - g\ :sub:`2`
+      - b\ :sub:`8`
+      - g\ :sub:`7`
+      - r\ :sub:`6`
+    * -
+      -
+      - 5
+      -
+      - r\ :sub:`1`
+      - r\ :sub:`3`
+      - b\ :sub:`7`
+      - g\ :sub:`6`
+      - r\ :sub:`5`
+    * -
+      -
+      - 6
+      -
+      - r\ :sub:`0`
+      - r\ :sub:`2`
+      - b\ :sub:`6`
+      - g\ :sub:`5`
+      - r\ :sub:`4`
 
 .. raw:: latex
 

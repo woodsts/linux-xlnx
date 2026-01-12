@@ -807,6 +807,7 @@ static int mmi_dp_aux_init(struct dptx *dptx)
 }
 
 static int mmi_dp_bridge_attach(struct drm_bridge *bridge,
+				struct drm_encoder *encoder,
 				enum drm_bridge_attach_flags flags)
 {
 	struct dptx *dptx = (struct dptx *)bridge->driver_private;
@@ -836,7 +837,8 @@ static void mmi_dp_bridge_detach(struct drm_bridge *bridge)
 	drm_dp_aux_unregister(&dptx->dp_aux);
 }
 
-static enum drm_connector_status mmi_dp_bridge_detect(struct drm_bridge *bridge)
+static enum drm_connector_status mmi_dp_bridge_detect(struct drm_bridge *bridge,
+						      struct drm_connector *connector)
 {
 	const struct dptx *dptx = (struct dptx *)bridge->driver_private;
 
@@ -1020,10 +1022,10 @@ static int mmi_dp_configure_video(struct dptx *dptx,
 
 /* Atomic enable function */
 static void mmi_dp_bridge_atomic_enable(struct drm_bridge *bridge,
-					struct drm_bridge_state *old_bridge_state)
+					struct drm_atomic_state *old_bridge_state)
 {
 	struct dptx *dptx = container_of(bridge, struct dptx, bridge);
-	struct drm_atomic_state *state = old_bridge_state->base.state;
+	struct drm_atomic_state *state = old_bridge_state;
 	struct drm_crtc_state *crtc_state;
 	struct drm_display_mode *adjusted_mode;
 	struct drm_connector *connector;
@@ -1048,7 +1050,7 @@ static void mmi_dp_bridge_atomic_enable(struct drm_bridge *bridge,
 }
 
 static void mmi_dp_bridge_atomic_disable(struct drm_bridge *bridge,
-					 struct drm_bridge_state *old_bridge_state)
+					 struct drm_atomic_state *old_bridge_state)
 {
 	struct dptx *dptx = container_of(bridge, struct dptx, bridge);
 

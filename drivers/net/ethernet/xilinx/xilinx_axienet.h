@@ -9,6 +9,7 @@
 #ifndef XILINX_AXIENET_H
 #define XILINX_AXIENET_H
 
+#include <linux/dim.h>
 #include <linux/clk.h>
 #include <linux/netdevice.h>
 #include <linux/spinlock.h>
@@ -133,11 +134,19 @@
 #define XAXIDMA_IRQ_ERROR_MASK		0x00004000 /* Error interrupt */
 #define XAXIDMA_IRQ_ALL_MASK		0x00007000 /* All interrupts */
 
+/* Constant to convert delay counts to microseconds */
+#define XAXIDMA_DELAY_SCALE		(125ULL * USEC_PER_SEC)
+
 /* Default TX/RX Threshold and delay timer values for SGDMA mode */
 #define XAXIDMA_DFT_TX_THRESHOLD	24
 #define XAXIDMA_DFT_TX_USEC		50
 #define XAXIDMA_DFT_RX_THRESHOLD	1
+#ifdef CONFIG_AXIENET_HAS_MCDMA
 #define XAXIDMA_DFT_RX_USEC		50
+#else
+#define XAXIDMA_DFT_RX_USEC		16
+#endif
+
 
 #define XAXIDMA_BD_CTRL_TXSOF_MASK	0x08000000 /* First tx packet */
 #define XAXIDMA_BD_CTRL_TXEOF_MASK	0x04000000 /* Last tx packet */
@@ -476,6 +485,7 @@ enum temac_stat {
 #define XXV_AN_CTL1_OFFSET		0x000000e0
 #define XXV_USXGMII_AN_OFFSET		0x000000C8
 #define XXV_USXGMII_AN_STS_OFFSET	0x00000458
+
 /* Switchable 1/10/25G MAC Register Definitions */
 #define XXVS_RESET_OFFSET		0x00000004
 #define XXVS_AN_CTL1_OFFSET		0x000000e0
@@ -504,7 +514,7 @@ enum temac_stat {
 #define XXVS_AN_COMPLETE_MASK		BIT(2)
 #define XXVS_LT_DETECT_MASK		BIT(0)
 #define XXVS_SPEED_1G			BIT(0)
-#define	XXVS_SPEED_10G			BIT(1)
+#define XXVS_SPEED_10G			BIT(1)
 #define XXVS_SPEED_25G			~(BIT(0) | BIT(1))
 #define XXVS_RX_STATUS_MASK		BIT(0)
 #define XXVS_RX_RESET			BIT(30)
@@ -512,6 +522,7 @@ enum temac_stat {
 #define XXVS_CTRL_CORE_SPEED_SEL_CLEAR		~(BIT(6) | BIT(7))
 #define XXVS_CTRL_CORE_SPEED_SEL_1G		BIT(6)
 #define XXVS_CTRL_CORE_SPEED_SEL_10G	BIT(7)
+
 
 /* XXV MAC Register Mask Definitions */
 #define XXV_GT_RESET_MASK	BIT(0)
@@ -623,6 +634,7 @@ enum temac_stat {
 #define XMCDMA_DELAY_SHIFT		24
 #define XMCDMA_DFT_TX_THRESHOLD		1
 
+/* Note: chan_id reuse in these macros is intentional for loop iteration */
 #define XMCDMA_TXWEIGHT_CH_MASK(chan_id)	GENMASK(((chan_id) * 4 + 3), \
 							(chan_id) * 4)
 #define XMCDMA_TXWEIGHT_CH_SHIFT(chan_id)	((chan_id) * 4)
@@ -738,10 +750,10 @@ enum temac_stat {
 #define MRMAC_GT_DEFAULT_MASK		0x00000000
 #define MRMAC_GT_10G_MASK		0x00000001
 #define MRMAC_GT_25G_MASK		0x00000002
-#define MRMAC_GT_100G_MASK		0x00000002
+#define MRMAC_GT_100G_MASK             0x00000002
 
 #define MRMAC_GT_LANE_OFFSET		BIT(16)
-#define GT_MODE_NARROW			"Narrow"
+#define GT_MODE_NARROW                 "Narrow"
 
 /* DCMAC Register Definitions */
 /* Global registers */
@@ -766,7 +778,7 @@ enum temac_stat {
 /* Register bit masks */
 #define DCMAC_TX_ACTV_PRT_ALL_MASK	(BIT(16) | BIT(18))
 #define DCMAC_RX_ACTV_PRT_ALL_MASK	(BIT(20) | BIT(22))
-#define DCMAC_RX_ERR_IND_STD_MASK	BIT(24)	/* FEC error indication mode as IEEE Standard */
+#define DCMAC_RX_ERR_IND_STD_MASK	BIT(24) /* FEC error indication mode as IEEE Standard */
 #define DCMAC_TX_FEC_UNIQUE_FLIP_MASK	BIT(25)
 #define DCMAC_RX_FEC_UNIQUE_FLIP_MASK	BIT(26)
 #define DCMAC_CH_RX_FCS_MASK		BIT(1)
@@ -776,8 +788,8 @@ enum temac_stat {
 #define DCMAC_CH_TX_FCS_MASK		BIT(0)
 #define DCMAC_CH_TX_IPG_MASK		(BIT(10) | BIT(11))
 #define DCMAC_P_SPEED_100G_MASK		~(BIT(0) | BIT(1))
-#define DCMAC_P_SPEED_200G_MASK	BIT(1)
-#define DCMAC_P_SPEED_400G_MASK	BIT(2)
+#define DCMAC_P_SPEED_200G_MASK		BIT(1)
+#define DCMAC_P_SPEED_400G_MASK		BIT(2)
 #define DCMAC_CH_TXMD_PM_TICK_INTERNAL_MASK	BIT(4)
 #define DCMAC_CH_RXMD_PM_TICK_INTERNAL_MASK	BIT(11)
 #define DCMAC_CH_MD_FEC_KR4		(BIT(16) | BIT(18))
@@ -795,9 +807,9 @@ enum temac_stat {
 
 /* DCMAC GT wrapper bitmasks */
 #define DCMAC_GT_RESET_ALL	BIT(0)
-#define DCMAC_GT_TX_PRECURSOR	(BIT(12) | BIT(13))	/* gt_txprecursor */
-#define DCMAC_GT_TX_POSTCURSOR	(BIT(18) | BIT(21))	/* gt_txpostcursor */
-#define DCMAC_GT_MAINCURSOR	(BIT(24) | BIT(25) | BIT(27) | BIT(30))	/* gt maincursor */
+#define DCMAC_GT_TX_PRECURSOR	(BIT(12) | BIT(13))     /* gt_txprecursor */
+#define DCMAC_GT_TX_POSTCURSOR	(BIT(18) | BIT(21))     /* gt_txpostcursor */
+#define DCMAC_GT_MAINCURSOR	(BIT(24) | BIT(25) | BIT(27) | BIT(30)) /* gt maincursor */
 
 #define DCMAC_GT_RXDPATH_RST	GENMASK(23, 0)
 
@@ -883,7 +895,7 @@ struct aximcdma_bd {
 	u32 app2;	/* TX csum seed */
 	u32 app3;
 	u32 app4;
-	struct sk_buff *sw_id_offset; /* first unused field by h/w */
+	struct sk_buff *sw_id_offset;	/* first unused field by h/w */
 	struct sk_buff *ptp_tx_skb;
 	u32 ptp_tx_ts_tag;
 	struct sk_buff *tx_skb;
@@ -955,30 +967,27 @@ struct skbuf_dma_descriptor {
  *              to catch overflows.
  * @stopping:   Set when @dma_err_task shouldn't do anything because we are
  *              about to stop the device.
- * @eth_irq:	Ethernet core IRQ number
- * @phy_mode:	Phy type to identify between MII/GMII/RGMII/SGMII/1000 Base-X
- * @options:	AxiEthernet option word
  * @dma_err_tasklet: Tasklet structure to process Axi DMA errors
- * @mcdma_regs:	Base address for the aximcdma device address space
+ * @mcdma_regs:        Base address for the aximcdma device address space
  * @num_tx_queues: Total number of Tx DMA queues
  * @num_rx_queues: Total number of Rx DMA queues
  * @dq:		DMA queues data
- * @phy_mode:  Phy type to identify between MII/GMII/RGMII/SGMII/1000 Base-X
+ * @phy_mode:	Phy type to identify between MII/GMII/RGMII/SGMII/1000 Base-X
  * @ptp_tx_lock: PTP Tx lock
  * @eth_irq:	Axi Ethernet IRQ number
  * @options:	AxiEthernet option word
  * @features:	Stores the extended features supported by the axienet hw
- * @tx_bd_num:	Size of TX buffer descriptor ring
- * @rx_bd_num:	Size of RX buffer descriptor ring
+ * @tx_bd_num: Size of TX buffer descriptor ring
+ * @rx_bd_num: Size of RX buffer descriptor ring
+ * @coalesce_count_rx:	Store the irq coalesce on RX side.
+ * @coalesce_usec_rx:	IRQ coalesce delay for RX
+ * @coalesce_count_tx:	Store the irq coalesce on TX side.
+ * @coalesce_usec_tx:	IRQ coalesce delay for TX
  * @max_frm_size: Stores the maximum size of the frame that can be that
  *		  Txed/Rxed in the existing hardware. If jumbo option is
  *		  supported, the maximum frame size would be 9k. Else it is
  *		  1522 bytes (assuming support for basic VLAN)
  * @rxmem:	Stores rx memory size for jumbo frame handling.
- * @coalesce_count_rx:	Store the irq coalesce on RX side.
- * @coalesce_usec_rx:	IRQ coalesce delay for RX
- * @coalesce_count_tx:	Store the irq coalesce on TX side.
- * @coalesce_usec_tx:	IRQ coalesce delay for TX
  * @use_dmaengine: flag to check dmaengine framework usage.
  * @tx_chan:	TX DMA channel.
  * @rx_chan:	RX DMA channel.
@@ -993,8 +1002,8 @@ struct skbuf_dma_descriptor {
  * @axienet_config: Ethernet config structure
  * @ptp_os_cf: CF TS of PTP PDelay req for one step usage.
  * @xxv_ip_version: XXV IP version
- * @tx_ts_regs:	  Base address for the axififo device address space.
- * @rx_ts_regs:	  Base address for the rx axififo device address space.
+ * @tx_ts_regs:		Base address for the axififo device address space.
+ * @rx_ts_regs:		Base address for the rx axififo device address space.
  * @tstamp_config: Hardware timestamp config structure.
  * @tx_ptpheader: Stores the tx ptp header.
  * @aclk: AXI4-Lite clock for ethernet and dma.
@@ -1011,8 +1020,6 @@ struct skbuf_dma_descriptor {
  * @dma_mask: Specify the width of the DMA address space.
  * @usxgmii_rate: USXGMII PHY speed.
  * @max_speed: Maximum possible MAC speed.
- * @gt_pll: Common GT PLL mask control register space.
- * @gt_ctrl: GT speed and reset control register space.
  * @gds_gt_ctrl_rate: GPIO descriptor array for GT control rate.
  * @gds_gt_ctrl:	GPIO descriptor array for GT control.
  * @gds_gt_rx_dpath: GPIO descriptor array for GT Rx datapath reset.
@@ -1078,6 +1085,7 @@ struct axienet_local {
 	u16    num_rx_queues;	/* Number of RX DMA queues */
 	struct axienet_dma_q *dq[XAE_MAX_QUEUES];	/* DMA queue data*/
 
+
 	phy_interface_t phy_mode;
 	spinlock_t ptp_tx_lock;		/* PTP tx lock*/
 	int eth_irq;
@@ -1087,13 +1095,15 @@ struct axienet_local {
 	u32 tx_bd_num;
 	u32 rx_bd_num;
 
-	u32 max_frm_size;
-	u32 rxmem;
-
+#ifdef CONFIG_AXIENET_HAS_MCDMA
 	u32 coalesce_count_rx;
 	u32 coalesce_usec_rx;
 	u32 coalesce_count_tx;
 	u32 coalesce_usec_tx;
+#endif
+	u32 max_frm_size;
+	u32 rxmem;
+
 	u8  use_dmaengine;
 	struct dma_chan *tx_chan;
 	struct dma_chan *rx_chan;
@@ -1134,8 +1144,6 @@ struct axienet_local {
 	u32 usxgmii_rate;
 
 	u32 max_speed;		/* Max MAC speed */
-	void __iomem *gt_pll;	/* Common GT PLL mask control register space */
-	void __iomem *gt_ctrl;	/* GT speed and reset control register space */
 	struct gpio_descs *gds_gt_ctrl_rate;
 	struct gpio_descs *gds_gt_ctrl;
 	struct gpio_descs *gds_gt_rx_dpath;
@@ -1147,7 +1155,7 @@ struct axienet_local {
 	u32 gt_lane;		/* MRMAC GT lane index used */
 	bool gt_mode_narrow;
 	int mrmac_stream_dwidth;
-	spinlock_t switch_lock;	/* To protect Link training programming from multiple context */
+	spinlock_t switch_lock; /* To protect Link training programming from multiple context */
 	bool auto_neg;
 	void __iomem *eoe_regs;
 	bool eoe_connected;
@@ -1175,6 +1183,13 @@ struct axienet_local {
  * @tx_bd_tail:	Stores the index of the Tx buffer descriptor in the ring being
  *		accessed currently. Used while processing BDs after the TX
  *		completed.
+ * @rx_cr_lock: Lock protecting @rx_dma_cr, its register, and @rx_dma_started
+ * @rx_dma_started: Set when RX DMA is started
+ * @tx_cr_lock: Lock protecting @tx_dma_cr, its register, and @tx_dma_started
+ * @tx_dma_started: Set when TX DMA is started
+ * @rx_dim:     DIM state for the receive queue
+ * @rx_dim_enabled: Whether DIM is enabled or not
+ * @rx_irqs:    Number of interrupts
  * @napi_rx:	NAPI RX control structure
  * @rx_dma_cr:  Nominal content of RX DMA control register
  * @rx_bd_v:	Virtual address of the RX buffer descriptor ring
@@ -1213,6 +1228,15 @@ struct axienet_dma_q {
 	u32 tx_bd_ci;
 	u32 tx_bd_tail;
 
+	spinlock_t rx_cr_lock;		/* Lock protecting rx_dma_cr */
+	bool rx_dma_started;
+	spinlock_t tx_cr_lock;		/* Lock protecting tx_dma_cr */
+	bool tx_dma_started;
+
+	struct dim rx_dim;
+	bool rx_dim_enabled;
+	u16 rx_irqs;
+
 	struct napi_struct napi_rx;
 	u32 rx_dma_cr;
 	struct axidma_bd *rx_bd_v;
@@ -1245,10 +1269,10 @@ struct axienet_dma_q {
 /**
  * enum axienet_ip_type - AXIENET IP/MAC type.
  *
- * @XAXIENET_1_2p5G:	 IP is 1G/2.5G
+ * @XAXIENET_1_2p5G:    IP is 1G/2.5G
  * @XAXIENET_LEGACY_10G: IP type is legacy 10G MAC.
- * @XAXIENET_10G_25G:	 IP type is 10G/25G MAC(XXV MAC).
- * @XAXIENET_MRMAC:	 IP type is hardened Multi Rate MAC (MRMAC).
+ * @XAXIENET_10G_25G:   IP type is 10G/25G MAC(XXV MAC).
+ * @XAXIENET_MRMAC:     IP type is hardened Multi Rate MAC (MRMAC).
  * @XAXIENET_1G_10G_25G: IP type is 1G/10G/25G MAC.
  * @XAXIENET_DCMAC: IP type is 600G Channelized Multirate Ethernet (DCMAC)
  *
@@ -1565,6 +1589,7 @@ void axienet_tx_hwtstamp(struct axienet_local *lp,
 void axienet_tx_hwtstamp(struct axienet_local *lp,
 			 struct axidma_bd *cur_p);
 #endif
+
 u32 axienet_usec_to_timer(struct axienet_local *lp, u32 coalesce_usec);
 
 #endif /* XILINX_AXI_ENET_H */

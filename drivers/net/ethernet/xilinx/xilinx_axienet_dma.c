@@ -340,6 +340,7 @@ irqreturn_t __maybe_unused axienet_rx_irq(int irq, void *_ndev)
 		tasklet_schedule(&lp->dma_err_tasklet[i]);
 		axienet_dma_out32(q, XAXIDMA_RX_SR_OFFSET, status);
 	}
+	WRITE_ONCE(q->rx_irqs, READ_ONCE(q->rx_irqs) + 1);
 
 	return IRQ_HANDLED;
 }
@@ -396,8 +397,8 @@ void __maybe_unused axienet_dma_err_handler(unsigned long data)
 		cur_p->app2 = 0;
 		cur_p->app3 = 0;
 		cur_p->app4 = 0;
-		cur_p->sw_id_offset = 0;
-		cur_p->tx_skb = 0;
+		cur_p->sw_id_offset = NULL;
+		cur_p->tx_skb = NULL;
 	}
 
 	for (i = 0; i < lp->rx_bd_num; i++) {
@@ -421,8 +422,7 @@ void __maybe_unused axienet_dma_err_handler(unsigned long data)
 		axienet_iow(lp, XAE_RCW1_OFFSET, axienet_status);
 	}
 
-	if (lp->axienet_config->mactype == XAXIENET_1_2p5G &&
-	    !lp->eth_hasnobuf) {
+	if (lp->axienet_config->mactype == XAXIENET_1_2p5G && !lp->eth_hasnobuf) {
 		axienet_status = axienet_ior(lp, XAE_IP_OFFSET);
 		if (axienet_status & XAE_INT_RXRJECT_MASK)
 			axienet_iow(lp, XAE_IS_OFFSET, XAE_INT_RXRJECT_MASK);

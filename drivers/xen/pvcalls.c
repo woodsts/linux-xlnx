@@ -47,7 +47,7 @@ static int pvcalls_stream_connect(struct socket *sock, struct sockaddr *addr,
 static int pvcalls_accept(struct socket *sock, struct socket *newsock,
 			  struct proto_accept_arg *arg)
 {
-	return pvcalls_front_accept(sock, newsock, arg->flags);
+	return pvcalls_front_accept(sock, newsock, arg);
 }
 
 static int pvcalls_getname(struct socket *sock,

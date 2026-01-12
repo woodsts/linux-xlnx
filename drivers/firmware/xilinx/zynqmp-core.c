@@ -12,6 +12,7 @@
 #include <linux/mfd/core.h>
 #include <linux/of.h>
 #include <linux/of_platform.h>
+#include <linux/pm_domain.h>
 
 #include <linux/firmware/xlnx-zynqmp.h>
 #include "zynqmp-debug.h"
@@ -67,7 +68,7 @@ struct platform_fw_data {
 	/*
 	 * Family code for platform.
 	 */
-	u32 family_code;
+	const u32 family_code;
 };
 
 static struct platform_fw_data *active_platform_fw_data;
@@ -827,6 +828,7 @@ static int zynqmp_firmware_probe(struct platform_device *pdev)
 	if (ret)
 		return ret;
 
+	/* Get platform-specific firmware data from device tree match */
 	active_platform_fw_data = (struct platform_fw_data *)device_get_match_data(dev);
 	if (!active_platform_fw_data)
 		return -EINVAL;
@@ -949,6 +951,19 @@ static void zynqmp_firmware_remove(struct platform_device *pdev)
 	platform_device_unregister(em_dev);
 }
 
+static void zynqmp_firmware_sync_state(struct device *dev)
+{
+	struct device_node *np = dev->of_node;
+
+	if (!of_device_is_compatible(np, "xlnx,zynqmp-firmware"))
+		return;
+
+	of_genpd_sync_state(np);
+
+	if (zynqmp_pm_init_finalize())
+		dev_warn(dev, "failed to release power management to firmware\n");
+}
+
 static const struct platform_fw_data platform_fw_data_versal2 = {
 	.do_feature_check = do_feature_check_extended,
 	.zynqmp_pm_fw_call = __zynqmp_pm_fw_call_extended,
@@ -974,22 +989,10 @@ static const struct platform_fw_data platform_fw_data_zynqmp = {
 };
 
 static const struct of_device_id zynqmp_firmware_of_match[] = {
-	{
-		.compatible = "xlnx,zynqmp-firmware",
-		.data = &platform_fw_data_zynqmp,
-	},
-	{
-		.compatible = "xlnx,versal-firmware",
-		.data = &platform_fw_data_versal,
-	},
-	{
-		.compatible = "xlnx,versal-net-firmware",
-		.data = &platform_fw_data_versal_net,
-	},
-	{
-		.compatible = "xlnx,versal2-firmware",
-		.data = &platform_fw_data_versal2,
-	},
+	{.compatible = "xlnx,zynqmp-firmware", .data = &platform_fw_data_zynqmp},
+	{.compatible = "xlnx,versal-firmware", .data = &platform_fw_data_versal},
+	{.compatible = "xlnx,versal-net-firmware", .data = &platform_fw_data_versal_net},
+	{.compatible = "xlnx,versal2-firmware",	.data = &platform_fw_data_versal2},
 	{},
 };
 MODULE_DEVICE_TABLE(of, zynqmp_firmware_of_match);
@@ -998,9 +1001,10 @@ static struct platform_driver zynqmp_firmware_driver = {
 	.driver = {
 		.name = "zynqmp_firmware",
 		.of_match_table = zynqmp_firmware_of_match,
+		.sync_state = zynqmp_firmware_sync_state,
 	},
 	.probe = zynqmp_firmware_probe,
-	.remove_new = zynqmp_firmware_remove,
+	.remove = zynqmp_firmware_remove,
 	.shutdown = zynqmp_firmware_shutdown,
 };
 module_platform_driver(zynqmp_firmware_driver);

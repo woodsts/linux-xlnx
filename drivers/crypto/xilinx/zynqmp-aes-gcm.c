@@ -906,7 +906,7 @@ static void zynqmp_aes_aead_remove(struct platform_device *pdev)
 
 static struct platform_driver zynqmp_aes_driver = {
 	.probe	= zynqmp_aes_aead_probe,
-	.remove_new = zynqmp_aes_aead_remove,
+	.remove = zynqmp_aes_aead_remove,
 	.driver = {
 		.name		= "zynqmp-aes",
 	},

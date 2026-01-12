@@ -17,7 +17,7 @@
  * @return: length of data actually copied to buf.
  */
 ssize_t aie_sysfs_read_handler(struct file *filp, struct kobject *kobj,
-			       struct bin_attribute *attr, char *buf,
+			       const struct bin_attribute *attr, char *buf,
 			       loff_t offset, size_t max_size)
 {
 	ssize_t len = max_size;
@@ -111,7 +111,7 @@ aie_sysfs_create_bin_attr(struct device *dev, const struct aie_bin_attr *attr)
 static int aie_tile_sysfs_create(struct aie_tile *atile)
 {
 	struct attribute_group *attr_grp;
-	struct bin_attribute **bin_attrs;
+	const struct bin_attribute **bin_attrs;
 	struct attribute **dev_attrs;
 	const struct aie_sysfs_attr *attr;
 	int ret = 0;
@@ -206,7 +206,7 @@ static int aie_part_sysfs_create(struct aie_partition *apart)
 {
 	const struct aie_sysfs_attr *attr;
 	struct attribute_group *attr_grp;
-	struct bin_attribute **bin_attrs;
+	const struct bin_attribute **bin_attrs;
 	struct attribute **dev_attrs;
 	int ret = 0;
 	u32 index;
@@ -291,7 +291,7 @@ static int aie_aperture_sysfs_create(struct aie_aperture *aperture)
 {
 	const struct aie_sysfs_attr *attr;
 	struct attribute_group *attr_grp;
-	struct bin_attribute **bin_attrs;
+	const struct bin_attribute **bin_attrs;
 	struct attribute **dev_attrs;
 	int ret = 0;
 	u32 index;

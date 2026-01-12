@@ -540,6 +540,7 @@ static int mmi_dc_dumb_create(struct drm_file *file_priv,
 
 static struct drm_framebuffer *
 mmi_dc_fb_create(struct drm_device *drm, struct drm_file *file_priv,
+		 const struct drm_format_info *info,
 		 const struct drm_mode_fb_cmd2 *mode_cmd)
 {
 	struct mmi_dc *dc = drm_to_dc(drm);
@@ -550,7 +551,7 @@ mmi_dc_fb_create(struct drm_device *drm, struct drm_file *file_priv,
 	for (i = 0; i < ARRAY_SIZE(cmd.pitches); ++i)
 		cmd.pitches[i] = ALIGN(cmd.pitches[i], dc->dma_align);
 
-	return drm_gem_fb_create(drm, file_priv, &cmd);
+	return drm_gem_fb_create(drm, file_priv, info, &cmd);
 }
 
 static const struct drm_mode_config_funcs mmi_dc_mode_config_funcs = {
@@ -572,7 +573,6 @@ static const struct drm_driver mmi_dc_drm_driver = {
 	.fops			= &mmi_dc_drm_fops,
 	.name			= "mmi-dc",
 	.desc			= "MMI Display Controller Driver",
-	.date			= "20241226",
 	.major			= 0,
 	.minor			= 1,
 };
@@ -738,7 +738,7 @@ MODULE_DEVICE_TABLE(of, mmi_dc_of_match);
 
 static struct platform_driver mmi_dc_driver = {
 	.probe			= mmi_dc_probe,
-	.remove_new		= mmi_dc_remove,
+	.remove			= mmi_dc_remove,
 	.shutdown		= mmi_dc_shutdown,
 	.driver			= {
 		.name		= "mmi-dc",

@@ -323,8 +323,10 @@ static int zynqmp_pm_probe(struct platform_device *pdev)
 		if ((pm_family_code == PM_VERSAL_NET_FAMILY_CODE) ||
 		    (pm_family_code == PM_VERSAL2_FAMILY_CODE))
 			node_id = PM_DEV_ACPU_0_0;
-		else
+		else if (pm_family_code == PM_VERSAL_FAMILY_CODE)
 			node_id = PM_DEV_ACPU_0;
+		else
+			return -ENODEV;
 
 		ret = register_event(&pdev->dev, PM_NOTIFY_CB, node_id, EVENT_SUBSYSTEM_RESTART,
 				     false, subsystem_restart_event_callback);
@@ -410,7 +412,7 @@ MODULE_DEVICE_TABLE(of, pm_of_match);
 
 static struct platform_driver zynqmp_pm_platform_driver = {
 	.probe = zynqmp_pm_probe,
-	.remove_new = zynqmp_pm_remove,
+	.remove = zynqmp_pm_remove,
 	.driver = {
 		.name = "zynqmp_power",
 		.of_match_table = pm_of_match,

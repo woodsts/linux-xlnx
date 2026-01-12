@@ -54,9 +54,10 @@ static struct drm_framebuffer_funcs xlnx_fb_funcs = {
  */
 struct drm_framebuffer *
 xlnx_fb_create(struct drm_device *drm, struct drm_file *file_priv,
+	       const struct drm_format_info *info,
 	       const struct drm_mode_fb_cmd2 *mode_cmd)
 {
-	return drm_gem_fb_create_with_funcs(drm, file_priv, mode_cmd,
+	return drm_gem_fb_create_with_funcs(drm, file_priv, info, mode_cmd,
 					    &xlnx_fb_funcs);
 }
 
@@ -127,7 +128,7 @@ xlnx_fb_gem_fb_alloc(struct drm_device *drm,
 	if (!fb)
 		return ERR_PTR(-ENOMEM);
 
-	drm_helper_mode_fill_fb_struct(drm, fb, mode_cmd);
+	drm_helper_mode_fill_fb_struct(drm, fb, NULL, mode_cmd);
 
 	for (i = 0; i < num_planes; i++)
 		fb->obj[i] = obj[i];
@@ -166,8 +167,11 @@ xlnx_fb_gem_fbdev_fb_create(struct drm_device *drm,
 	return xlnx_fb_gem_fb_alloc(drm, &mode_cmd, &obj, 1, funcs);
 }
 
+static const struct drm_fb_helper_funcs xlnx_fb_helper_funcs = {
+};
+
 /**
- * xlnx_fbdev_create - Create the fbdev with a framebuffer
+ * xlnx_fbdev_probe - Create the fbdev with a framebuffer
  * @fb_helper: fb helper structure
  * @size: framebuffer size info
  *
@@ -175,8 +179,8 @@ xlnx_fb_gem_fbdev_fb_create(struct drm_device *drm,
  *
  * Return: 0 if successful, or the error code.
  */
-static int xlnx_fbdev_create(struct drm_fb_helper *fb_helper,
-			     struct drm_fb_helper_surface_size *size)
+int xlnx_fbdev_probe(struct drm_fb_helper *fb_helper,
+		     struct drm_fb_helper_surface_size *size)
 {
 	struct xlnx_fbdev *fbdev = to_fbdev(fb_helper);
 	struct drm_device *drm = fb_helper->dev;
@@ -227,6 +231,7 @@ static int xlnx_fbdev_create(struct drm_fb_helper *fb_helper,
 	fb = fbdev->fb;
 	fb_helper->fb = fb;
 	fb_helper->info = fbi;
+	fb_helper->funcs = &xlnx_fb_helper_funcs;
 	fbi->fbops = &xlnx_fbdev_ops;
 
 	ret = fb_alloc_cmap(&fbi->cmap, 256, 0);
@@ -258,9 +263,6 @@ err_drm_gem_cma_free_object:
 	return ret;
 }
 
-static const struct drm_fb_helper_funcs xlnx_fb_helper_funcs = {
-	.fb_probe = xlnx_fbdev_create,
-};
 
 /**
  * xlnx_fb_init - Allocate and initializes the Xilinx framebuffer

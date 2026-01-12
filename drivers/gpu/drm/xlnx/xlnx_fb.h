@@ -23,6 +23,7 @@ struct drm_fb_helper;
 
 struct drm_framebuffer *
 xlnx_fb_create(struct drm_device *drm, struct drm_file *file_priv,
+	       const struct drm_format_info *info,
 	       const struct drm_mode_fb_cmd2 *mode_cmd);
 
 #ifdef CONFIG_DRM_FBDEV_EMULATION

@@ -62,15 +62,15 @@
 #define DST_BIT_POS	9U
 #define SRC_BITMASK	GENMASK(11, 8)
 
+/* Macro to represent SGI type for IPI IRQs */
+#define IPI_IRQ_TYPE_SGI	2
+
 /*
  * Module parameters
  */
 static int tx_poll_period = 5;
 module_param_named(tx_poll_period, tx_poll_period, int, 0644);
 MODULE_PARM_DESC(tx_poll_period, "Poll period waiting for ack after send.");
-
-/* Macro to represent SGI type for IPI IRQs */
-#define IPI_IRQ_TYPE_SGI	2
 
 /**
  * struct zynqmp_ipi_mchan - Description of a Xilinx ZynqMP IPI mailbox channel
@@ -893,8 +893,8 @@ static void zynqmp_ipi_free_mboxes(struct zynqmp_ipi_pdata *pdata)
 	if (pdata->irq_type == IPI_IRQ_TYPE_SGI)
 		xlnx_mbox_cleanup_sgi(pdata);
 
-	i = pdata->num_mboxes;
-	for (i--; i >= 0; i--) {
+	i = pdata->num_mboxes - 1;
+	for (; i >= 0; i--) {
 		ipi_mbox = &pdata->ipi_mboxes[i];
 		if (device_is_registered(&ipi_mbox->dev))
 			device_unregister(&ipi_mbox->dev);
@@ -1017,7 +1017,7 @@ MODULE_DEVICE_TABLE(of, zynqmp_ipi_of_match);
 
 static struct platform_driver zynqmp_ipi_driver = {
 	.probe = zynqmp_ipi_probe,
-	.remove_new = zynqmp_ipi_remove,
+	.remove = zynqmp_ipi_remove,
 	.driver = {
 		   .name = "zynqmp-ipi",
 		   .of_match_table = of_match_ptr(zynqmp_ipi_of_match),

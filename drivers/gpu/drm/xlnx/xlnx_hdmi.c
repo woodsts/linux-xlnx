@@ -875,7 +875,7 @@ static ssize_t xlnx_hdcp_key_store(struct device *sysfs_dev, struct device_attri
 	return count;
 }
 
-static DEVICE_ATTR(xlnx_hdcp_key, 0600/*S_IRUSR | S_IWUSR*/, NULL, xlnx_hdcp_key_store);
+static DEVICE_ATTR(xlnx_hdcp_key, 0600 /* S_IRUSR | S_IWUSR */, NULL, xlnx_hdcp_key_store);
 
 static struct attribute *xlnx_hdcp_key_attrs[] = {
 	&dev_attr_xlnx_hdcp_key.attr,
@@ -1927,7 +1927,7 @@ static int xlnx_hdmi_set_frl_rate(struct xlnx_hdmi *hdmi, u8 frlrate)
 	else
 		xlnx_hdmi_writel(hdmi, HDMI_TX_FRL_CTRL_CLR,
 				 HDMI_TX_FRL_CTRL_FRL_LN_OP);
-	/*TODO: FFE levels needs to set here */
+	/* TODO: FFE levels needs to set here */
 	return xlnx_hdmi_ddcwrite_field(hdmi, HDMI_TX_SCDC_FIELD_SNK_CFG1,
 					frlrate);
 }
@@ -2443,7 +2443,7 @@ static int xlnx_hdmi_exec_frl_state_lts4(struct xlnx_hdmi *hdmi)
 
 	if (!status) {
 		status = xlnx_hdmi_ddcwrite_field(hdmi,
-						HDMI_TX_SCDC_FIELD_FLT_UPDATE, 1);
+						  HDMI_TX_SCDC_FIELD_FLT_UPDATE, 1);
 		if (!status) {
 			hdmi->stream.frl_config.timer_cnt = 0;
 			hdmi->stream.frl_config.frl_train_states =
@@ -2885,7 +2885,7 @@ static const struct drm_connector_funcs xlnx_hdmi_connector_funcs = {
 /* DRM connector helper functions */
 static int
 xlnx_hdmi_connector_mode_valid(struct drm_connector *connector,
-			       struct drm_display_mode *mode)
+			       const struct drm_display_mode *mode)
 {
 	struct xlnx_hdmi *hdmi = connector_to_hdmi(connector);
 	enum drm_mode_status status = MODE_OK;

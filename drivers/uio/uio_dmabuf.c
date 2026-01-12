@@ -210,4 +210,4 @@ int uio_dmabuf_cleanup(struct uio_device *dev, struct list_head *dbufs,
 	return 0;
 }
 
-MODULE_IMPORT_NS(DMA_BUF);
+MODULE_IMPORT_NS("DMA_BUF");

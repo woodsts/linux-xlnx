@@ -293,7 +293,7 @@ static struct aie_dmabuf *aie_part_attach_dmabuf(struct aie_partition *apart,
 				dev_err(&apart->dev,
 					"dmabuf not contiguous\n");
 				dma_buf_unmap_attachment(attach, sgt,
-							 attach->dir);
+							 DMA_BIDIRECTIONAL);
 				dma_buf_detach(dbuf, attach);
 				return ERR_PTR(-EINVAL);
 			}
@@ -304,7 +304,7 @@ static struct aie_dmabuf *aie_part_attach_dmabuf(struct aie_partition *apart,
 
 	adbuf = kmem_cache_alloc(apart->dbufs_cache, GFP_KERNEL);
 	if (!adbuf) {
-		dma_buf_unmap_attachment(attach, sgt, attach->dir);
+		dma_buf_unmap_attachment(attach, sgt, DMA_BIDIRECTIONAL);
 		dma_buf_detach(dbuf, attach);
 		return ERR_PTR(-ENOMEM);
 	}
@@ -350,7 +350,7 @@ static void aie_part_dmabuf_attach_put(struct aie_dmabuf *adbuf)
 
 	apart = dev_to_aiepart(adbuf->attach->dev);
 	dbuf = adbuf->attach->dmabuf;
-	dma_buf_unmap_attachment(adbuf->attach, adbuf->sgt, adbuf->attach->dir);
+	dma_buf_unmap_attachment(adbuf->attach, adbuf->sgt, DMA_BIDIRECTIONAL);
 	dma_buf_detach(dbuf, adbuf->attach);
 	dma_buf_put(dbuf);
 	list_del(&adbuf->node);
@@ -387,7 +387,7 @@ void aie_part_release_dmabufs(struct aie_partition *apart)
 		dbuf = adbuf->attach->dmabuf;
 
 		dma_buf_unmap_attachment(adbuf->attach, adbuf->sgt,
-					 adbuf->attach->dir);
+					 DMA_BIDIRECTIONAL);
 		dma_buf_detach(dbuf, adbuf->attach);
 		dma_buf_put(dbuf);
 		list_del(&adbuf->node);

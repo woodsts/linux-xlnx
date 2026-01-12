@@ -178,6 +178,7 @@ properties:
       Should be "rx_chan0", "rx_chan1" ... "rx_chan15" for DMA Rx channel
     minItems: 2
     maxItems: 32
+
   dma-coherent: true
 
   xlnx,eth-hasnobuf:
@@ -211,18 +212,6 @@ properties:
     description: Indicate the GT reset and speed control lane for the
       the current MRMAC lane.
 
-  xlnx,gtpll:
-    $ref: /schemas/types.yaml#/definitions/phandle
-    description: Handle to AXI GPIO instance for GT PLL mask control.
-      This is required to control the common PLL mask bits.
-    deprecated: true
-
-  xlnx,gtctrl:
-    $ref: /schemas/types.yaml#/definitions/phandle
-    description: Handle to AXI GPIO instance for GT speed and reset
-      control for each MRMAC lane.
-    deprecated: true
-
   xlnx,phcindex:
     $ref: /schemas/types.yaml#/definitions/uint32
     description: Indicate the index of the physical hardware clock
@@ -243,43 +232,25 @@ properties:
 
   max-speed: true
 
-  gt_ctrl-gpios:
-    deprecated: true
-
   gt-ctrl-gpios:
     description: Phandle and specifier for GT control GPIO used to
       configure GT.
-
-  gt_rx_dpath-gpios:
-    deprecated: true
 
   gt-rx-dpath-gpios:
     description: Phandle and specifier for the GPIO used to
       reset GT Rx datapath.
 
-  gt_tx_dpath-gpios:
-    deprecated: true
-
   gt-tx-dpath-gpios:
     description: Phandle and specifier for the GPIO used to
       reset GT Tx datapath.
-
-  gt_tx_rst_done-gpios:
-    deprecated: true
 
   gt-tx-rst-done-gpios:
     description: Phandle and specifier for the GPIO used to
       get GT Tx reset status.
 
-  gt_rx_rst_done-gpios:
-    deprecated: true
-
   gt-rx-rst-done-gpios:
     description: Phandle and specifier for the GPIO used to
       get GT Rx reset status.
-
-  gt_rsts-gpios:
-    deprecated: true
 
   gt-rsts-gpios:
     description: Phandle and specifier for the GPIO used to
@@ -543,11 +514,8 @@ examples:
         xlnx,gtlane = <0x0>;
         xlnx,rxmem = <0x8000>;
         ptp-hardware-clock = <&ptp_device>;
-
         gt-ctrl-rate-gpios = <&gpio4 0 0>, <&gpio4 1 0>;
-
         gt-ctrl-gpios = <&gpio4 32 0>, <&gpio5 32 0>;
-
         gt-rx-dpath-gpios = <&gpio4 33 0>;
         gt-tx-dpath-gpios = <&gpio4 34 0>;
         gt-rx-rst-done-gpios = <&gpio6 32 0>, <&gpio6 33 0>, <&gpio6 34 0>, <&gpio6 35 0>;
@@ -556,27 +524,6 @@ examples:
 
 # 4) #Example for DCMAC Ethernet subsystem
   - |
-    gpio1: gpio@a4130000 {
-        compatible = "xlnx,xps-gpio-1.00.a";
-        reg = <0xa4130000 0x10000>;
-        #gpio-cells = <0x2>;
-        gpio-controller;
-      };
-
-    gpio2: gpio@a4150000 {
-        compatible = "xlnx,xps-gpio-1.00.a";
-        reg = <0xa4150000 0x10000>;
-        #gpio-cells = <0x2>;
-        gpio-controller;
-    };
-
-    gpio3: gpio@a4140000 {
-        compatible = "xlnx,xps-gpio-1.00.a";
-        reg = <0xa4140000 0x10000>;
-        #gpio-cells = <0x2>;
-        gpio-controller;
-    };
-
     dcmac: ethernet@a4000000 {
         axistream-connected = <&dma>;
         compatible = "xlnx,dcmac-2.4";
@@ -630,6 +577,9 @@ examples:
         phy-mode = "mii";
         reg = <0x80020000 0x10000>,<0x80008000 0x8000>;
         reg-names = "mac", "eoe";
+        xlnx,has-hw-offload;
+        xlnx,tx-hw-offload = <0x2>;
+        xlnx,rx-hw-offload = <0x2>;
         phy-handle = <&phy2>;
         xlnx,rxmem = <0x800>;
 

@@ -36,10 +36,8 @@ static const struct flash_info everspin_nor_parts[] = {
 
 static void everspin_nor_default_init(struct spi_nor *nor)
 {
-	struct spi_nor_flash_parameter *params = spi_nor_get_params(nor, 0);
 	/* Everspin FRAMs don't support the fast read opcode. */
-
-	params->hwcaps.mask &= ~SNOR_HWCAPS_READ_FAST;
+	nor->params->hwcaps.mask &= ~SNOR_HWCAPS_READ_FAST;
 }
 
 static const struct spi_nor_fixups everspin_nor_fixups = {

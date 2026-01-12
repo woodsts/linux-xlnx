@@ -235,17 +235,17 @@ static void zynqmp_r5_mb_rx_cb(struct mbox_client *cl, void *msg)
 
 	/* copy data from ipi buffer to r5_core if IPI is buffered. */
 	ipi_msg = (struct zynqmp_ipi_message *)msg;
-        if (ipi_msg) {
-                 buf_msg = (struct zynqmp_ipi_message *)ipi->rx_mc_buf;
-                 len = ipi_msg->len;
-                 if (len > IPI_BUF_LEN_MAX) {
-                         dev_warn(cl->dev, "msg size exceeded than %d\n",
-                                  IPI_BUF_LEN_MAX);
-                         len = IPI_BUF_LEN_MAX;
-                 }
-                 buf_msg->len = len;
-                 memcpy(buf_msg->data, ipi_msg->data, len);
-         }
+	if (ipi_msg) {
+		buf_msg = (struct zynqmp_ipi_message *)ipi->rx_mc_buf;
+		len = ipi_msg->len;
+		if (len > IPI_BUF_LEN_MAX) {
+			dev_warn(cl->dev, "msg size exceeded than %d\n",
+				 IPI_BUF_LEN_MAX);
+			len = IPI_BUF_LEN_MAX;
+		}
+		buf_msg->len = len;
+		memcpy(buf_msg->data, ipi_msg->data, len);
+	}
 
 	/* received and processed interrupt ack */
 	if (mbox_send_message(ipi->rx_chan, NULL) < 0)
@@ -481,12 +481,18 @@ static int zynqmp_r5_rproc_stop(struct rproc *rproc)
 		return ret;
 	}
 
-	if (zynqmp_pm_feature(PM_FORCE_POWERDOWN) < 1) {
-		dev_dbg(r5_core->dev, "EEMI interface %d not supported\n",
+	/*
+	 * Check expected version of EEMI call before calling it. This avoids
+	 * any error or warning prints from firmware as it is expected that fw
+	 * doesn't support it.
+	 */
+	if (zynqmp_pm_feature(PM_FORCE_POWERDOWN) != 1) {
+		dev_dbg(r5_core->dev, "EEMI interface %d ver 1 not supported\n",
 			PM_FORCE_POWERDOWN);
-		return -EINVAL;
+		return -EOPNOTSUPP;
 	}
 
+	/* maintain force pwr down for backward compatibility */
 	ret = zynqmp_pm_force_pwrdwn(r5_core->pm_domain_id,
 				     ZYNQMP_PM_REQUEST_ACK_BLOCKING);
 	if (ret)
@@ -1385,14 +1391,21 @@ static int zynqmp_r5_cluster_init(struct zynqmp_r5_cluster *cluster)
 
 	/*
 	 * Number of cores is decided by number of child nodes of
-	 * r5f subsystem node in dts. If Split mode is used in dts
-	 * 2 child nodes are expected.
+	 * r5f subsystem node in dts.
+	 * In split mode maximum two child nodes are expected.
+	 * However, only single core can be enabled too.
+	 * Driver can handle following configuration in split mode:
+	 * 1) core0 enabled, core1 disabled
+	 * 2) core0 disabled, core1 enabled
+	 * 3) core0 and core1 both are enabled.
+	 * For now, no more than two cores are expected per cluster
+	 * in split mode.
 	 * In lockstep mode if two child nodes are available,
 	 * only use first child node and consider it as core0
 	 * and ignore core1 dt node.
 	 */
 	core_count = of_get_available_child_count(dev_node);
-	if (core_count == 0) {
+	if (core_count == 0 || core_count > 2) {
 		dev_err(dev, "Invalid number of r5 cores %d", core_count);
 		return -EINVAL;
 	} else if (cluster_mode == LOCKSTEP_MODE && core_count == 2) {

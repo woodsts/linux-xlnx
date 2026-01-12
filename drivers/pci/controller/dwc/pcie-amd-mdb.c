@@ -253,7 +253,7 @@ static void amd_mdb_pcie_free_irq_domains(struct amd_mdb_pcie *pcie)
 			irq = irq_find_mapping(pcie->mdb_domain, i);
 			if (irq) {
 				disable_irq(irq);
-				free_irq(irq,pcie);
+				free_irq(irq, pcie);
 				irq_dispose_mapping(irq);
 			}
 		}
@@ -312,8 +312,8 @@ static int amd_mdb_pcie_init_irq_domains(struct amd_mdb_pcie *pcie,
 		return -ENODEV;
 	}
 
-	pcie->mdb_domain = irq_domain_add_linear(pcie_intc_node, 32,
-						 &event_domain_ops, pcie);
+	pcie->mdb_domain = irq_domain_create_linear(of_fwnode_handle(pcie_intc_node), 32,
+						    &event_domain_ops, pcie);
 	if (!pcie->mdb_domain) {
 		err = -ENOMEM;
 		dev_err(dev, "Failed to add MDB domain\n");
@@ -322,8 +322,8 @@ static int amd_mdb_pcie_init_irq_domains(struct amd_mdb_pcie *pcie,
 
 	irq_domain_update_bus_token(pcie->mdb_domain, DOMAIN_BUS_NEXUS);
 
-	pcie->intx_domain = irq_domain_add_linear(pcie_intc_node, PCI_NUM_INTX,
-						  &amd_intx_domain_ops, pcie);
+	pcie->intx_domain = irq_domain_create_linear(of_fwnode_handle(pcie_intc_node),
+						     PCI_NUM_INTX, &amd_intx_domain_ops, pcie);
 	if (!pcie->intx_domain) {
 		err = -ENOMEM;
 		dev_err(dev, "Failed to add INTx domain\n");
@@ -473,7 +473,7 @@ static int amd_mdb_add_pcie_port(struct amd_mdb_pcie *pcie,
 	if (pcie->perst_gpio) {
 		mdelay(PCIE_T_PVPERL_MS);
 		gpiod_set_value_cansleep(pcie->perst_gpio, 0);
-		mdelay(PCIE_RESET_CONFIG_DEVICE_WAIT_MS);
+		mdelay(PCIE_RESET_CONFIG_WAIT_MS);
 	}
 
 	err = dw_pcie_host_init(pp);
